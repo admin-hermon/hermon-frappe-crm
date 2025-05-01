@@ -16,7 +16,6 @@ def is_enabled():
 
 @frappe.whitelist()
 def generate_access_token():
-	"""Returns access token that is required to authenticate Twilio Client SDK."""
 	twilio = Twilio.connect()
 	if not twilio:
 		return {}
@@ -30,7 +29,7 @@ def generate_access_token():
 		}
 
 	token = twilio.generate_voice_access_token(identity=frappe.session.user)
-	return {"token": frappe.safe_decode(token)}
+	return {"token": token}  # ✅ already a string
 
 
 @frappe.whitelist(allow_guest=True)

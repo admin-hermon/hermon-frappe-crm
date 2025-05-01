@@ -36,21 +36,21 @@ class Twilio:
 		numbers = self.twilio_client.incoming_phone_numbers.list()
 		return [n.phone_number for n in numbers]
 
-	def generate_voice_access_token(self, identity: str, ttl=60 * 60):
-		"""Generates a token required to make voice calls from the browser."""
-		# identity is used by twilio to identify the user uniqueness at browser(or any endpoints).
-		identity = self.safe_identity(identity)
-
-		# Create access token with credentials
-		token = AccessToken(self.account_sid, self.api_key, self.api_secret, identity=identity, ttl=ttl)
-
-		# Create a Voice grant and add to token
-		voice_grant = VoiceGrant(
-			outgoing_application_sid=self.application_sid,
-			incoming_allow=True,  # Allow incoming calls
+	def generate_voice_access_token(self, identity):
+		access_token = AccessToken(
+			self.account_sid,
+			self.api_key,
+			self.api_secret,
+			identity=identity
 		)
-		token.add_grant(voice_grant)
-		return token.to_jwt()
+
+		voice_grant = VoiceGrant(
+			outgoing_application_sid=self.outgoing_sid,  # You MUST set this
+			# optionally: push_credential_sid=..., incoming_allow=True
+		)
+		access_token.add_grant(voice_grant)
+
+		return access_token.to_jwt().decode()  # Returns a proper JWT string
 
 	@classmethod
 	def safe_identity(cls, identity: str):
