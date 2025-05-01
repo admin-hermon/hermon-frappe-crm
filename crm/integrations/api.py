@@ -37,6 +37,7 @@ def set_default_calling_medium(medium):
 				"doctype": "CRM Telephony Agent",
 				"agent": frappe.session.user,
 				"default_medium": medium,
+				"user": frappe.session.user 
 			}
 		).insert(ignore_permissions=True)
 	else:
