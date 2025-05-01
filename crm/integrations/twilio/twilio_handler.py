@@ -50,7 +50,7 @@ class Twilio:
 		)
 		access_token.add_grant(voice_grant)
 
-		return access_token.to_jwt().decode()  # Returns a proper JWT string
+		return access_token.to_jwt()  # Returns a proper JWT string
 
 	@classmethod
 	def safe_identity(cls, identity: str):
