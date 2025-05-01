@@ -45,7 +45,7 @@ class Twilio:
 		)
 
 		voice_grant = VoiceGrant(
-			outgoing_application_sid=self.outgoing_sid,  # You MUST set this
+			outgoing_application_sid=self.application_sid,  # You MUST set this
 			# optionally: push_credential_sid=..., incoming_allow=True
 		)
 		access_token.add_grant(voice_grant)
