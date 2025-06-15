@@ -538,6 +538,11 @@ const tabs = computed(() => {
       icon: EmailIcon,
     },
     {
+      name: 'SMS',
+      label: __('SMS'),
+      icon: Email2Icon,
+    },
+    {
       name: 'Comments',
       label: __('Comments'),
       icon: CommentIcon,

@@ -122,7 +122,31 @@ class Twilio:
 		client = TwilioClient(twilio_settings.account_sid, auth_token)
 
 		return client
+	
+	def send_sms(self, to_number: str, message: str) -> dict:
+		from_number = frappe.db.get_value(
+			"CRM Telephony Agent", frappe.session.user, "twilio_number"
+		)
+		if not from_number:
+			frappe.throw(
+				_("No Twilio number is configured for your user. Please contact your administrator."),
+				title=_("Twilio Number Missing")
+			)
 
+		twilio_message_create_response = self.twilio_client.messages.create(
+			to=to_number,
+			body=message,
+			from_=from_number
+		)
+
+		return {
+			'sid': twilio_message_create_response.sid,
+			'message': twilio_message_create_response.body,
+			'from_number': twilio_message_create_response.from_,
+			'to_number': twilio_message_create_response.to,
+			'status': twilio_message_create_response.status,
+			'direction': 'Outgoing'
+		}
 
 class IncomingCall:
 	def __init__(self, from_number, to_number, meta=None):

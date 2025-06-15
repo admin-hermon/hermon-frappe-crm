@@ -7,6 +7,7 @@
     :title="title"
     :doc="doc"
     :emailBox="emailBox"
+    :smsBox="smsBox"
     :whatsappBox="whatsappBox"
     :modalRef="modalRef"
   />
@@ -24,7 +25,8 @@
     <div
       v-else-if="
         activities?.length ||
-        (whatsappMessages.data?.length && title == 'WhatsApp')
+        (whatsappMessages.data?.length && title == 'WhatsApp') ||
+        (title == 'SMS' && smsHistory.data?.length)
       "
       class="activities"
     >
@@ -36,6 +38,12 @@
           :messages="whatsappMessages.data"
         />
       </div>
+      <SmsArea
+        v-else-if="title == 'SMS'"
+        :history="smsHistory.data || []"
+        :loading="smsHistory.loading"
+        :error="smsHistory.error"
+      />
       <div
         v-else-if="title == 'Notes'"
         class="grid grid-cols-1 gap-4 px-3 pb-3 sm:px-10 sm:pb-5 lg:grid-cols-2 xl:grid-cols-3"
@@ -390,6 +398,11 @@
         @click="emailBox.showComment = true"
       />
       <Button
+        v-else-if="title == 'SMS'"
+        :label="__('New SMS')"
+        @click="smsBox.show = true"
+      />
+      <Button
         v-else-if="title == 'Tasks'"
         :label="__('Create Task')"
         @click="modalRef.showTask()"
@@ -418,6 +431,12 @@
       v-model:whatsapp="whatsappMessages"
       :doctype="doctype"
       @scroll="scroll"
+    />
+    <SmsBox
+      v-if="title == 'SMS'"
+      :doc="doc.data"
+      :smsBox="smsBox"
+      @reload="smsHistory.reload()"
     />
   </div>
   <WhatsappTemplateSelectorModal
@@ -454,6 +473,7 @@ import NoteArea from '@/components/Activities/NoteArea.vue'
 import TaskArea from '@/components/Activities/TaskArea.vue'
 import AttachmentArea from '@/components/Activities/AttachmentArea.vue'
 import DataFields from '@/components/Activities/DataFields.vue'
+import SmsArea from '@/components/Activities/SmsArea.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
 import Email2Icon from '@/components/Icons/Email2Icon.vue'
@@ -481,6 +501,7 @@ import CommunicationArea from '@/components/CommunicationArea.vue'
 import WhatsappTemplateSelectorModal from '@/components/Modals/WhatsappTemplateSelectorModal.vue'
 import AllModals from '@/components/Activities/AllModals.vue'
 import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
+import SmsBox from '@/components/Activities/SmsBox.vue'
 import { timeAgo, formatDate, startCase } from '@/utils'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
@@ -497,6 +518,7 @@ import {
   nextTick,
   onMounted,
   onBeforeUnmount,
+  reactive,
 } from 'vue'
 import { useRoute } from 'vue-router'
 
@@ -532,6 +554,18 @@ const changeTabTo = (tabName) => {
   if (index == -1) return
   tabIndex.value = index
 }
+
+const smsBox = reactive({
+  show: false,
+})
+
+const smsHistory = createResource({
+  url: 'crm.integrations.twilio.api.get_sms_history',
+  params: {
+    lead_identifier: doc.value.data.name,
+  },
+  auto: true,
+})
 
 const all_activities = createResource({
   url: 'crm.api.activities.get_activities',
@@ -700,6 +734,8 @@ const emptyText = computed(() => {
     text = 'No Attachments'
   } else if (title.value == 'WhatsApp') {
     text = 'No WhatsApp Messages'
+  } else if (title.value == 'SMS') {
+    text = 'No SMS Messages'
   }
   return text
 })
@@ -709,6 +745,8 @@ const emptyTextIcon = computed(() => {
   if (title.value == 'Emails') {
     icon = Email2Icon
   } else if (title.value == 'Comments') {
+    icon = CommentIcon
+  } else if (title.value == 'SMS') {
     icon = CommentIcon
   } else if (title.value == 'Data') {
     icon = DetailsIcon

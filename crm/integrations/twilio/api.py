@@ -163,3 +163,66 @@ def get_datetime_from_timestamp(timestamp):
 	system_timezone = frappe.utils.get_system_timezone()
 	converted_datetime = datetime_utc_tz.astimezone(ZoneInfo(system_timezone))
 	return frappe.utils.format_datetime(converted_datetime, "yyyy-MM-dd HH:mm:ss")
+
+
+@frappe.whitelist()
+def get_sms_history(lead_identifier: str) -> list:
+	"""Get SMS history for a lead"""
+	if not frappe.db.exists("CRM Lead", lead_identifier):
+		frappe.throw(_("You must provide a valid lead to get SMS history"))
+
+	return frappe.get_all(
+		'SMS Message',
+		filters={'lead': lead_identifier},
+		fields=['name', 'direction', 'from_number', 'to_number', 'message', 'status', 'creation'],
+		order_by='creation desc'
+	)
+
+
+@frappe.whitelist()
+def send_sms(lead_identifier: str, message: str):
+	lead_doc = frappe.get_doc('CRM Lead', lead_identifier)
+
+	if not lead_doc:
+		frappe.throw(_("Lead not found"))
+
+	if not lead_doc.mobile_no:
+		frappe.throw(_("No mobile number found for this lead"))
+
+	twilio = Twilio.connect()
+	sent_message = twilio.send_sms(lead_doc.mobile_no, message)
+
+	sms = frappe.new_doc('SMS Message')
+	sms.lead = lead_doc.name
+	sms.direction = sent_message.get('direction')
+	sms.from_number = sent_message.get('from_number')
+	sms.to_number = sent_message.get('to_number')
+	sms.message = sent_message.get('message')
+	sms.twilio_sid = sent_message.get('sid')
+	sms.status = sent_message.get('status')
+	sms.insert()
+
+
+@frappe.whitelist(allow_guest=True)
+def handle_incoming_sms(**kwargs):
+	webhook_data = frappe._dict(kwargs)
+
+	from_number = webhook_data.get('From')
+	to_number = webhook_data.get('To')
+	message_body = webhook_data.get('Body')
+	message_sid = webhook_data.get('MessageSid')
+	status = webhook_data.get('SmsStatus')
+
+	lead_name = frappe.db.get_value(
+		"CRM Lead", {"mobile_no": from_number}, "name"
+	)
+
+	sms = frappe.new_doc('SMS Message')
+	sms.lead = lead_name
+	sms.direction = 'Incoming'
+	sms.from_number = from_number
+	sms.to_number = to_number
+	sms.message = message_body
+	sms.twilio_sid = message_sid
+	sms.status = status
+	sms.insert(ignore_permissions=True)
