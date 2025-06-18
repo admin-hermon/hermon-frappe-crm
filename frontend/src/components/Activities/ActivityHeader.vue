@@ -17,6 +17,16 @@
       <span>{{ __('New Email') }}</span>
     </Button>
     <Button
+      v-else-if="title == 'SMS'"
+      variant="solid"
+      @click="smsBox.show = true"
+    >
+      <template #prefix>
+        <FeatherIcon name="plus" class="h-4 w-4" />
+      </template>
+      <span>{{ __('New SMS') }}</span>
+    </Button>
+    <Button
       v-else-if="title == 'Comments'"
       variant="solid"
       @click="emailBox.showComment = true"
@@ -111,6 +121,7 @@ const props = defineProps({
   doc: Object,
   modalRef: Object,
   emailBox: Object,
+  smsBox: Object,
   whatsappBox: Object,
 })
 
