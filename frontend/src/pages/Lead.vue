@@ -35,6 +35,7 @@
         </template>
       </Dropdown>
       <Button
+        v-if="dealsModule?.meta?.show"
         :label="__('Convert to Deal')"
         variant="solid"
         @click="showConvertToDealModal = true"
@@ -379,6 +380,7 @@ import { useOnboarding } from 'frappe-ui/frappe'
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useActiveTabManager } from '@/composables/useActiveTabManager'
+import { routes } from '@/router'
 
 const { brand } = getSettings()
 const { isManager } = usersStore()
@@ -396,6 +398,10 @@ const props = defineProps({
     type: String,
     required: true,
   },
+})
+
+const dealsModule = computed(() => {
+  return routes.find((r) => r.name === 'Deals')
 })
 
 const errorTitle = ref('')
