@@ -3,6 +3,15 @@ import { userResource } from '@/stores/user'
 import { sessionStore } from '@/stores/session'
 import { viewsStore } from '@/stores/views'
 
+import LeadsIcon from '@/components/Icons/LeadsIcon.vue'
+import DealsIcon from '@/components/Icons/DealsIcon.vue'
+import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
+import OrganizationsIcon from '@/components/Icons/OrganizationsIcon.vue'
+import NoteIcon from '@/components/Icons/NoteIcon.vue'
+import TaskIcon from '@/components/Icons/TaskIcon.vue'
+import PhoneIcon from '@/components/Icons/PhoneIcon.vue'
+import Email2Icon from '@/components/Icons/Email2Icon.vue'
+
 const routes = [
   {
     path: '/',
@@ -18,6 +27,12 @@ const routes = [
     path: '/leads/view/:viewType?',
     name: 'Leads',
     component: () => import('@/pages/Leads.vue'),
+    meta: {
+      show: true,
+      label: 'Leads',
+      icon: LeadsIcon,
+      is_default: true,
+    },
   },
   {
     path: '/leads/:leadId',
@@ -30,6 +45,11 @@ const routes = [
     path: '/deals/view/:viewType?',
     name: 'Deals',
     component: () => import('@/pages/Deals.vue'),
+    meta: {
+      show: false,
+      label: 'Deals',
+      icon: DealsIcon,
+    },
   },
   {
     path: '/deals/:dealId',
@@ -42,18 +62,33 @@ const routes = [
     path: '/notes/view/:viewType?',
     name: 'Notes',
     component: () => import('@/pages/Notes.vue'),
+    meta: {
+      show: true,
+      label: 'Notes',
+      icon: NoteIcon,
+    },
   },
   {
     alias: '/tasks',
     path: '/tasks/view/:viewType?',
     name: 'Tasks',
     component: () => import('@/pages/Tasks.vue'),
+    meta: {
+      show: true,
+      label: 'Tasks',
+      icon: TaskIcon,
+    },
   },
   {
     alias: '/contacts',
     path: '/contacts/view/:viewType?',
     name: 'Contacts',
     component: () => import('@/pages/Contacts.vue'),
+    meta: {
+      show: false,
+      label: 'Contacts',
+      icon: ContactsIcon,
+    },
   },
   {
     path: '/contacts/:contactId',
@@ -66,6 +101,11 @@ const routes = [
     path: '/organizations/view/:viewType?',
     name: 'Organizations',
     component: () => import('@/pages/Organizations.vue'),
+    meta: {
+      show: false,
+      label: 'Organizations',
+      icon: OrganizationsIcon,
+    },
   },
   {
     path: '/organizations/:organizationId',
@@ -78,12 +118,22 @@ const routes = [
     path: '/call-logs/view/:viewType?',
     name: 'Call Logs',
     component: () => import('@/pages/CallLogs.vue'),
+    meta: {
+      show: true,
+      label: 'Call Logs',
+      icon: PhoneIcon,
+    },
   },
   {
     alias: '/email-templates',
     path: '/email-templates/view/:viewType?',
     name: 'Email Templates',
     component: () => import('@/pages/EmailTemplates.vue'),
+    meta: {
+      show: true,
+      label: 'Email Templates',
+      icon: Email2Icon,
+    },
   },
   {
     path: '/email-templates/:emailTemplateId',
@@ -117,6 +167,15 @@ router.beforeEach(async (to, from, next) => {
 
   isLoggedIn && (await userResource.promise)
 
+  const disabledRoute = routes.find(
+    (route) => route.meta?.show === false && to.path.startsWith(route.alias),
+  )
+
+  if (disabledRoute) {
+    const defaultRoute = routes.find((route) => route.meta?.is_default)
+    return next({ name: defaultRoute.name })
+  }
+
   if (to.name === 'Home' && isLoggedIn) {
     const { views, getDefaultView } = viewsStore()
     await views.promise
@@ -149,4 +208,5 @@ router.beforeEach(async (to, from, next) => {
   }
 })
 
+export { routes }
 export default router
