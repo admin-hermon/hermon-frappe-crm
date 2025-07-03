@@ -198,8 +198,12 @@ import NoteModal from '@/components/Modals/NoteModal.vue'
 import { Device } from '@twilio/voice-sdk'
 import { useDraggable, useWindowSize } from '@vueuse/core'
 import { capture } from '@/telemetry'
+import { powerDialerStore } from '@/stores/powerDialer'
 import { Avatar, call, createResource } from 'frappe-ui'
 import { ref, watch } from 'vue'
+
+// Power dialer integration
+const powerDialer = powerDialerStore()
 
 let device = ''
 let log = ref('Connecting...')
@@ -435,6 +439,11 @@ async function makeOutgoingCall(number) {
           title: '',
           content: '',
         }
+        
+        // Power dialer integration - notify when call ends
+        if (powerDialer.isActive) {
+          powerDialer.onCallEnded()
+        }
       })
       _call.on('cancel', () => {
         log.value = `Call ended from makeOutgoing call cancel.`
@@ -451,6 +460,11 @@ async function makeOutgoingCall(number) {
           content: '',
         }
         counterUp.value.stop()
+        
+        // Power dialer integration - notify when call ends
+        if (powerDialer.isActive) {
+          powerDialer.onCallEnded()
+        }
       })
     } catch (error) {
       log.value = `Could not connect call: ${error.message}`

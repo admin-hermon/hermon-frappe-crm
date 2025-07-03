@@ -9,6 +9,14 @@
         :actions="leadsListView.customListActions"
       />
       <Button
+        v-if="callableLeadsCount > 0 && callEnabled"
+        variant="outline"
+        :label="`Power Dialer (${callableLeadsCount})`"
+        @click="startPowerDialer"
+      >
+        <template #prefix><PhoneIcon class="h-4 w-4" /></template>
+      </Button>
+      <Button
         variant="solid"
         :label="__('Create')"
         @click="showLeadModal = true"
@@ -310,8 +318,9 @@ import { getMeta } from '@/stores/meta'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
+import { powerDialerStore } from '@/stores/powerDialer'
 import { callEnabled } from '@/composables/settings'
-import { formatDate, timeAgo, website, formatTime } from '@/utils'
+import { formatDate, timeAgo, website, formatTime, createToast } from '@/utils'
 import { Avatar, Tooltip, Dropdown } from 'frappe-ui'
 import { useRoute } from 'vue-router'
 import { ref, computed, reactive, h } from 'vue'
@@ -321,6 +330,7 @@ const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
 const { makeCall } = globalStore()
 const { getUser } = usersStore()
 const { getLeadStatus } = statusesStore()
+const powerDialer = powerDialerStore()
 
 const route = useRoute()
 
@@ -578,4 +588,36 @@ function showTask(name) {
   docname.value = name
   showTaskModal.value = true
 }
+
+function startPowerDialer() {
+  // Get leads with phone numbers from current filtered view
+  const currentLeads = leads.value?.data?.data || []
+  const callableLeads = currentLeads.filter(lead => lead.mobile_no || lead.phone)
+  
+  if (!callableLeads.length) {
+    createToast({
+      title: 'No Callable Leads',
+      text: 'No leads with phone numbers found in current view',
+      icon: 'info',
+      iconClasses: 'text-blue-500',
+    })
+    return
+  }
+
+  // Start the power dialer session
+  powerDialer.startSession(callableLeads)
+  
+  createToast({
+    title: 'Power Dialer Started',
+    text: `Starting calls for ${callableLeads.length} leads`,
+    icon: 'check',
+    iconClasses: 'text-green-500',
+  })
+}
+
+const callableLeadsCount = computed(() => {
+  // Count leads that have phone numbers in current filtered view
+  const currentLeads = leads.value?.data?.data || []
+  return currentLeads.filter(lead => lead.mobile_no || lead.phone).length
+})
 </script>
