@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { globalStore } from './global'
+import { createToast } from '@/utils'
 
 export const powerDialerStore = defineStore('power-dialer', () => {
   const { makeCall } = globalStore()
@@ -60,7 +61,7 @@ export const powerDialerStore = defineStore('power-dialer', () => {
     callNext()
   }
 
-  function callNext() {
+  async function callNext() {
     if (isManualPause.value) {
       return // Don't proceed if manually paused
     }
@@ -72,9 +73,27 @@ export const powerDialerStore = defineStore('power-dialer', () => {
 
     const lead = currentLead.value
     if (lead?.primary_phone) {
-      isDialing.value = true
-      // Use existing makeCall function - it handles all Twilio integration
-      makeCall(lead.primary_phone)
+      try {
+        isDialing.value = true
+        // Use existing makeCall function - it handles all Twilio integration
+        await Promise.resolve(makeCall(lead.primary_phone))
+      } catch (error) {
+        // Handle call initiation error
+        console.error('Power Dialer call error:', error)
+        isDialing.value = false
+        isManualPause.value = true
+        isPaused.value = false
+        pauseCountdown.value = 0
+
+        createToast({
+          title: 'Call Error',
+          text: error?.message || 'Failed to initiate call',
+          icon: 'x',
+          iconClasses: 'text-ink-red-4',
+        })
+        // Do not proceed automatically; user can skip or resume
+        return
+      }
     } else {
       // Skip lead without phone number
       nextLead()
@@ -159,7 +178,11 @@ export const powerDialerStore = defineStore('power-dialer', () => {
 
   function nextLead() {
     currentLeadIndex.value++
-    callNext()
+    if (currentLeadIndex.value >= leads.value.length) {
+      endSession()
+    } else {
+      callNext()
+    }
   }
 
   function skipLead() {
@@ -167,7 +190,9 @@ export const powerDialerStore = defineStore('power-dialer', () => {
       clearInterval(pauseTimer.value)
       pauseTimer.value = null
     }
+    // Clear any pause states
     isPaused.value = false
+    isManualPause.value = false
     pauseCountdown.value = 0
     nextLead()
   }

@@ -12,6 +12,7 @@
         v-if="callableLeadsCount > 0 && callEnabled"
         variant="outline"
         :label="`Power Dialer (${callableLeadsCount})`"
+        :disabled="powerDialer.isActive"
         @click="startPowerDialer"
       >
         <template #prefix><PhoneIcon class="h-4 w-4" /></template>
@@ -590,6 +591,7 @@ function showTask(name) {
 }
 
 function startPowerDialer() {
+  if (powerDialer.isActive) return
   // Get leads with phone numbers from current filtered view
   const currentLeads = leads.value?.data?.data || []
   const callableLeads = currentLeads.filter(lead => lead.mobile_no || lead.phone)
