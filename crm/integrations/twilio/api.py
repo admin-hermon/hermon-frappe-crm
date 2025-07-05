@@ -190,6 +190,9 @@ def send_sms(lead_identifier: str, message: str):
 	if not lead_doc.mobile_no:
 		frappe.throw(_("No mobile number found for this lead"))
 
+	if not frappe.has_permission("SMS Message", "create"):
+		frappe.throw(_("Your user role does not allow you to send SMS. Please contact your administrator."))
+
 	twilio = Twilio.connect()
 	sent_message = twilio.send_sms(lead_doc.mobile_no, message)
 
