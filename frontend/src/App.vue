@@ -4,6 +4,7 @@
   </Layout>
   <Dialogs />
   <Toasts />
+  <PowerDialerUI />
 </template>
 
 <script setup>
@@ -12,6 +13,7 @@ import { sessionStore as session } from '@/stores/session'
 import { setTheme } from '@/stores/theme'
 import { Toasts, setConfig } from 'frappe-ui'
 import { computed, defineAsyncComponent, onMounted } from 'vue'
+import PowerDialerUI from '@/components/PowerDialer/PowerDialerUI.vue'
 
 const MobileLayout = defineAsyncComponent(
   () => import('./components/Layouts/MobileLayout.vue'),
