@@ -18,6 +18,7 @@
         <template #prefix><PhoneIcon class="h-4 w-4" /></template>
       </Button>
       <Button
+        v-if="false"
         variant="solid"
         :label="__('Create')"
         @click="showLeadModal = true"

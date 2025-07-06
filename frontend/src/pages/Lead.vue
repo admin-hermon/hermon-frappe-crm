@@ -534,9 +534,14 @@ usePageMeta(() => {
 const tabs = computed(() => {
   let tabOptions = [
     {
-      name: 'Activity',
-      label: __('Activity'),
-      icon: ActivityIcon,
+      name: 'Calls',
+      label: __('Calls'),
+      icon: PhoneIcon,
+    },
+    {
+      name: 'SMS',
+      label: __('SMS'),
+      icon: Email2Icon,
     },
     {
       name: 'Emails',
@@ -544,9 +549,15 @@ const tabs = computed(() => {
       icon: EmailIcon,
     },
     {
-      name: 'SMS',
-      label: __('SMS'),
-      icon: Email2Icon,
+      name: 'WhatsApp',
+      label: __('WhatsApp'),
+      icon: WhatsAppIcon,
+      condition: () => whatsappEnabled.value,
+    },
+    {
+      name: 'Activity',
+      label: __('Activity'),
+      icon: ActivityIcon,
     },
     {
       name: 'Comments',
@@ -557,11 +568,6 @@ const tabs = computed(() => {
       name: 'Data',
       label: __('Data'),
       icon: DetailsIcon,
-    },
-    {
-      name: 'Calls',
-      label: __('Calls'),
-      icon: PhoneIcon,
     },
     {
       name: 'Tasks',
@@ -577,12 +583,6 @@ const tabs = computed(() => {
       name: 'Attachments',
       label: __('Attachments'),
       icon: AttachmentIcon,
-    },
-    {
-      name: 'WhatsApp',
-      label: __('WhatsApp'),
-      icon: WhatsAppIcon,
-      condition: () => whatsappEnabled.value,
     },
   ]
   return tabOptions.filter((tab) => (tab.condition ? tab.condition() : true))
