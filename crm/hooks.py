@@ -263,6 +263,7 @@ standard_dropdown_items = [
 		"type": "Route",
 		"route": "#",
 		"is_standard": 1,
+		"hidden": 1,
 	},
 	{
 		"name1": "support_link",
@@ -271,6 +272,7 @@ standard_dropdown_items = [
 		"icon": "life-buoy",
 		"route": "https://t.me/frappecrm",
 		"is_standard": 1,
+		"hidden": 1,
 	},
 	{
 		"name1": "docs_link",
@@ -279,6 +281,7 @@ standard_dropdown_items = [
 		"icon": "book-open",
 		"route": "https://docs.frappe.io/crm",
 		"is_standard": 1,
+		"hidden": 1,
 	},
 	{
 		"name1": "toggle_theme",
