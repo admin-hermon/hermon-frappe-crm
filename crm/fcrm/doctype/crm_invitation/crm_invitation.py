@@ -43,6 +43,12 @@ class CRMInvitation(Document):
 			frappe.throw("Invalid or expired key")
 
 		user = self.create_user_if_not_exists()
+		# Grant technical role for SMS sending if present
+		if frappe.db.exists("Role", "SMS Sender"):
+			user.append_roles("SMS Sender")
+		# Grant WhatsApp Manager only if that role exists on the site
+		if frappe.db.exists("Role", "WhatsApp Manager"):
+			user.append_roles("WhatsApp Manager")
 		user.append_roles(self.role)
 		user.save(ignore_permissions=True)
 
