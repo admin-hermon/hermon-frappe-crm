@@ -147,6 +147,14 @@
               :user="activity.data.sender"
               size="md"
             />
+            <WhatsAppIcon
+              v-else-if="activity.activity_type == 'whatsapp'"
+              class="text-ink-green-5"
+            />
+            <CommentIcon
+              v-else-if="activity.activity_type == 'sms'"
+              class="text-ink-blue-5"
+            />
             <MissedCallIcon
               v-else-if="
                 ['incoming_call', 'outgoing_call'].includes(
@@ -186,6 +194,14 @@
         >
           <CommentArea :activity="activity" />
         </div>
+        <WhatsappActivity
+          v-else-if="activity.activity_type == 'whatsapp'"
+          :activity="activity"
+        />
+        <SmsActivity
+          v-else-if="activity.activity_type == 'sms'"
+          :activity="activity"
+        />
         <div
           class="mb-4 flex flex-col gap-2 py-1.5"
           :id="activity.name"
@@ -474,6 +490,8 @@ import TaskArea from '@/components/Activities/TaskArea.vue'
 import AttachmentArea from '@/components/Activities/AttachmentArea.vue'
 import DataFields from '@/components/Activities/DataFields.vue'
 import SmsArea from '@/components/Activities/SmsArea.vue'
+import SmsActivity from '@/components/Activities/SmsActivity.vue'
+import WhatsappActivity from '@/components/Activities/WhatsappActivity.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import ActivityIcon from '@/components/Icons/ActivityIcon.vue'
 import Email2Icon from '@/components/Icons/Email2Icon.vue'
