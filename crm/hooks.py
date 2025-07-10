@@ -153,6 +153,17 @@ doc_events = {
 		"validate": ["crm.api.whatsapp.validate"],
 		"on_update": ["crm.api.whatsapp.on_update"],
 	},
+	# The `Communication` doctype serves a dual purpose in Frappe:
+	# 1. It is the primary storage for all incoming and outgoing emails.
+	# 2. It is used as the generic "Activity" log for the timeline view.
+	#
+	# Because of this, email activities are handled out-of-the-box. To handle
+	# notifications for *new* emails, we hook into `on_update`. This is because
+	# Frappe first creates the Communication doc, then links it to a Lead in a
+	# separate 'update' step, which is the moment we need to trigger the notification.
+	"Communication": {
+		"on_update": "crm.overrides.communication.on_update"
+	},
 	"CRM Deal": {
 		"on_update": [
 			"crm.fcrm.doctype.erpnext_crm_settings.erpnext_crm_settings.create_customer_in_erpnext"

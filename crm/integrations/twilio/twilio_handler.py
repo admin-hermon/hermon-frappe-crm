@@ -123,16 +123,7 @@ class Twilio:
 
 		return client
 	
-	def send_sms(self, to_number: str, message: str) -> dict:
-		from_number = frappe.db.get_value(
-			"CRM Telephony Agent", frappe.session.user, "twilio_number"
-		)
-		if not from_number:
-			frappe.throw(
-				_("No Twilio number is configured for your user. Please contact your administrator."),
-				title=_("Twilio Number Missing")
-			)
-
+	def send_sms(self, from_number: str, to_number: str, message: str) -> dict:
 		twilio_message_create_response = self.twilio_client.messages.create(
 			to=to_number,
 			body=message,

@@ -4,6 +4,8 @@ import frappe
 from frappe import _
 from werkzeug.wrappers import Response
 
+from crm.api.doc import get_assigned_users
+from crm.fcrm.doctype.crm_notification.crm_notification import notify_user
 from crm.integrations.api import get_contact_by_phone_number
 
 from .twilio_handler import IncomingCall, Twilio, TwilioCallDetails
@@ -95,6 +97,33 @@ def link(contact_number, call_log):
 			doctype = "CRM Deal"
 			docname = contact.get("deal")
 		call_log.link_with_reference_doc(doctype, docname)
+
+
+def _create_incoming_sms_notification(sms_doc):
+	notification_text = f"""
+		<div class="mb-2 leading-5 text-ink-gray-5">
+			<span class="font-medium text-ink-gray-9">{ _('You') }</span>
+			<span>{ _('received an SMS in lead') }</span>
+			<span class="font-medium text-ink-gray-9">{ sms_doc.lead }</span>
+		</div>
+	"""
+
+	assigned_users = get_assigned_users("CRM Lead", sms_doc.lead)
+
+	for user in assigned_users:
+		notify_user(
+			{
+				"owner": sms_doc.owner,
+				"assigned_to": user,
+				"notification_type": "SMS",
+				"message": sms_doc.message,
+				"notification_text": notification_text,
+				"reference_doctype": "SMS Message",
+				"reference_docname": sms_doc.name,
+				"redirect_to_doctype": "CRM Lead",
+				"redirect_to_docname": sms_doc.lead,
+			}
+		)
 
 
 def update_call_log(call_sid, status=None):
@@ -193,23 +222,54 @@ def send_sms(lead_identifier: str, message: str):
 	if not frappe.has_permission("SMS Message", "create"):
 		frappe.throw(_("Your user role does not allow you to send SMS. Please contact your administrator."))
 
-	twilio = Twilio.connect()
-	sent_message = twilio.send_sms(lead_doc.mobile_no, message)
+	from_number = frappe.db.get_value(
+		"CRM Telephony Agent", frappe.session.user, "twilio_number"
+	)
 
+	if not from_number:
+		frappe.throw(_("No Twilio number is configured for your user. Please contact your administrator."))
+
+	# Create the SMS record with a "Sending" status first and commit it.
+	# This ensures we have a reliable record of our intent to send.
 	sms = frappe.new_doc('SMS Message')
 	sms.lead = lead_doc.name
-	sms.direction = sent_message.get('direction')
-	sms.from_number = sent_message.get('from_number')
-	sms.to_number = sent_message.get('to_number')
-	sms.message = sent_message.get('message')
-	sms.twilio_sid = sent_message.get('sid')
-	sms.status = sent_message.get('status')
+	sms.direction = "Outgoing"
+	sms.from_number = from_number
+	sms.to_number = lead_doc.mobile_no
+	sms.message = message
+	sms.status = "sending"
 	sms.insert()
+	frappe.db.commit()
+
+	# Now, attempt to send the message via the external API.
+	try:
+		twilio = Twilio.connect()
+		sent_message = twilio.send_sms(from_number, lead_doc.mobile_no, message)
+
+		# If successful, update the local record with the final details and commit.
+		sms.status = sent_message.get('status') or "sent"
+		sms.twilio_sid = sent_message.get('sid')
+		sms.save()
+		frappe.db.commit()
+	except Exception as e:
+		# If the API call fails, rollback any partial changes and update the DB record to 'Failed'.
+		frappe.db.rollback()
+
+		sms.status = "failed"
+		sms.save()
+		frappe.db.commit()
+
+		# Log the error and notify the user of the failure.
+		frappe.log_error(title="Twilio SMS Send Failed", message=frappe.get_traceback())
+		frappe.throw(_("Failed to send SMS via Twilio. Please check your credentials and try again."), exc=e)
 
 
 @frappe.whitelist(allow_guest=True)
 def handle_incoming_sms(**kwargs):
 	webhook_data = frappe._dict(kwargs)
+
+	# Log the raw incoming data for traceability
+	frappe.log(f"Incoming SMS Webhook: {webhook_data}")
 
 	from_number = webhook_data.get('From')
 	to_number = webhook_data.get('To')
@@ -230,3 +290,10 @@ def handle_incoming_sms(**kwargs):
 	sms.twilio_sid = message_sid
 	sms.status = status
 	sms.insert(ignore_permissions=True)
+	
+	try:
+		_create_incoming_sms_notification(sms)
+	except Exception:
+		# Log the error for administrators to review, but don't prevent storing the webhook sms data if the side effect logic fails
+		frappe.log_error(frappe.get_traceback(), "Creating a notification for an incomming SMS failed")
+

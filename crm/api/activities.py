@@ -179,6 +179,8 @@ def get_lead_activities(name):
 		"first_responded_on",
 	]
 
+	lead_doc = frappe.get_doc("CRM Lead", name)
+	lead_title = lead_doc.get_title()
 	doc = frappe.db.get_values("CRM Lead", name, ["creation", "owner"])[0]
 	activities = [
 		{
@@ -287,6 +289,33 @@ def get_lead_activities(name):
 	notes = get_linked_notes(name) + get_linked_calls(name).get("notes", [])
 	tasks = get_linked_tasks(name) + get_linked_calls(name).get("tasks", [])
 	attachments = get_attachments("CRM Lead", name)
+	whatsapp_messages = get_linked_whatsapp_messages(name)
+	sms_messages = get_linked_sms_messages(name)
+
+	for message in whatsapp_messages:
+		direction = "from" if message.type == "Incoming" else "to"
+		activities.append(
+			{
+				"name": message.name,
+				"activity_type": "whatsapp",
+				"creation": message.creation,
+				"owner": message.owner,
+				"content": f"WhatsApp Message {direction} {lead_title}: {message.message}",
+				"is_lead": True,
+			}
+		)
+	for message in sms_messages:
+		direction = "from" if message.direction == "Incoming" else "to"
+		activities.append(
+			{
+				"name": message.name,
+				"activity_type": "sms",
+				"creation": message.creation,
+				"owner": message.owner,
+				"content": f"SMS {direction} {lead_title}: {message.message}",
+				"is_lead": True,
+			}
+		)
 
 	activities.sort(key=lambda x: x["creation"], reverse=True)
 	activities = handle_multiple_versions(activities)
@@ -495,3 +524,21 @@ def parse_attachment_log(html, type):
 		"file_url": a_tag["href"],
 		"is_private": is_private,
 	}
+
+
+def get_linked_whatsapp_messages(name):
+	messages = frappe.get_all(
+		"WhatsApp Message",
+		filters={"reference_name": name},
+		fields=["name", "message", "type", "creation", "owner"],
+	)
+	return messages or []
+
+
+def get_linked_sms_messages(name):
+	messages = frappe.get_all(
+		"SMS Message",
+		filters={"lead": name},
+		fields=["name", "message", "direction", "creation", "owner"],
+	)
+	return messages or []
