@@ -33,6 +33,15 @@ def _handle_incoming_email(doc):
 
 		if not doc.reference_name:
 			return
+		
+		if frappe.db.exists(
+			"CRM Notification",
+			{
+				"reference_doctype": "Communication",
+				"reference_docname": doc.name,
+			},
+		):
+			return
 
 		notification_text = f"""
 			<div class="mb-2 leading-5 text-ink-gray-5">
