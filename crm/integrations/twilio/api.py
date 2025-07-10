@@ -290,9 +290,10 @@ def handle_incoming_sms(**kwargs):
 	sms.twilio_sid = message_sid
 	sms.status = status
 	sms.insert(ignore_permissions=True)
-	# We commit immediately to ensure the incoming message is never lost,
-	# even if subsequent side effects (activity, notification) fail.
-	frappe.db.commit()
+	
+	try:
+		_create_incoming_sms_notification(sms)
+	except Exception:
+		# Log the error for administrators to review, but don't prevent storing the webhook sms data if the side effect logic fails
+		frappe.log_error(frappe.get_traceback(), "Creating a notification for an incomming SMS failed")
 
-	# Create side effects. If these fail, the primary SMS record is already saved.
-	_create_incoming_sms_notification(sms)

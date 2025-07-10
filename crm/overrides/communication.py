@@ -60,4 +60,4 @@ def _handle_incoming_email(doc):
 			)
 	except Exception:
 		# Log the error for administrators to review, but don't block the user's action.
-		frappe.log_error(frappe.get_traceback(), "Email Notification Failed")
+		frappe.log_error(frappe.get_traceback(), "Creating a notification for an incomming Email failed")
