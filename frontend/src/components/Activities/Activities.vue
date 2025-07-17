@@ -58,11 +58,11 @@
             class="activity grid grid-cols-[30px_minmax(auto,_1fr)] gap-2 px-3 sm:gap-4 sm:px-10"
           >
             <div
-              class="relative flex justify-center after:absolute after:left-[50%] after:top-0 after:-z-10 after:border-l after:border-outline-gray-modals"
+              class="relative flex justify-center after:absolute after:left-[50%] after:top-0 after:-z-10 after:border-l after:border-gray-200 dark:after:border-gray-700"
               :class="i != activities.length - 1 ? 'after:h-full' : 'after:h-4'"
             >
               <div
-                class="z-10 flex h-8 w-7 items-center justify-center bg-surface-white"
+                class="z-10 flex h-8 w-7 items-center justify-center bg-white dark:bg-gray-900"
               >
                 <CommentIcon class="text-ink-gray-8" />
               </div>
@@ -80,11 +80,11 @@
             class="activity grid grid-cols-[30px_minmax(auto,_1fr)] gap-4 px-3 sm:px-10"
           >
             <div
-              class="relative flex justify-center after:absolute after:left-[50%] after:top-0 after:-z-10 after:border-l after:border-outline-gray-modals"
+              class="relative flex justify-center after:absolute after:left-[50%] after:top-0 after:-z-10 after:border-l after:border-gray-200 dark:after:border-gray-700"
               :class="i != activities.length - 1 ? 'after:h-full' : 'after:h-4'"
             >
               <div
-                class="z-10 flex h-8 w-7 items-center justify-center bg-surface-white text-ink-gray-8"
+                class="z-10 flex h-8 w-7 items-center justify-center bg-white text-ink-gray-8 dark:bg-gray-900"
               >
                 <MissedCallIcon
                   v-if="call.status == 'No Answer'"
@@ -124,11 +124,11 @@
       >
         <div
           v-if="['Activity', 'Emails'].includes(title)"
-          class="relative flex justify-center before:absolute before:left-[50%] before:top-0 before:-z-10 before:border-l before:border-outline-gray-modals"
+          class="relative flex justify-center before:absolute before:left-[50%] before:top-0 before:-z-10 before:border-l before:border-gray-200 dark:before:border-gray-700"
           :class="[i != activities.length - 1 ? 'before:h-full' : 'before:h-4']"
         >
           <div
-            class="z-10 flex h-7 w-7 items-center justify-center bg-surface-white"
+            class="z-10 flex h-7 w-7 items-center justify-center bg-white dark:bg-gray-900"
             :class="{
               'mt-2.5': ['communication'].includes(activity.activity_type),
               'bg-surface-white': ['added', 'removed', 'changed'].includes(
@@ -149,11 +149,11 @@
             />
             <WhatsAppIcon
               v-else-if="activity.activity_type == 'whatsapp'"
-              class="text-ink-green-5"
+              class="text-green-500 dark:text-green-400"
             />
             <CommentIcon
               v-else-if="activity.activity_type == 'sms'"
-              class="text-ink-blue-5"
+              class="text-blue-500 dark:text-blue-400"
             />
             <MissedCallIcon
               v-else-if="
