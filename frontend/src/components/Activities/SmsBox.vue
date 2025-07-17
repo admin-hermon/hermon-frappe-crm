@@ -1,11 +1,15 @@
 <template>
-  <div v-if="smsBox.show" class="sms-composer-box">
-    <div class="sms-composer">
+  <div
+    v-if="smsBox.show"
+    class="p-4 border-t border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+  >
+    <div class="flex flex-col">
       <textarea
         v-model="newMessage"
         placeholder="Type your message here..."
         :disabled="sendSms.loading"
         ref="smsTextarea"
+        class="w-full min-h-[80px] p-2 bg-white border border-gray-300 rounded resize-y dark:bg-gray-800 dark:border-gray-600 dark:text-white"
       ></textarea>
       <div v-if="sendError" class="p-2 text-sm text-red-600 bg-red-50 rounded-md">
         {{ sendError }}
@@ -79,24 +83,4 @@ function sendMessage() {
     sendError.value = err.messages?.[0] || 'An unknown error occurred while sending the SMS.';
   });
 }
-</script>
-
-<style scoped>
-.sms-composer-box {
-  padding: 1rem;
-  border-top: 1px solid #d1d8dd;
-  background: #f9fafb;
-}
-.sms-composer {
-  display: flex;
-  flex-direction: column;
-}
-.sms-composer textarea {
-  width: 100%;
-  border-radius: 4px;
-  border: 1px solid #d1d8dd;
-  padding: 0.5rem;
-  resize: vertical;
-  min-height: 80px;
-}
-</style> 
+</script> 
