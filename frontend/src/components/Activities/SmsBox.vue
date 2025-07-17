@@ -10,6 +10,7 @@
         :disabled="sendSms.loading"
         ref="smsTextarea"
         class="w-full min-h-[80px] p-2 bg-white border border-gray-300 rounded resize-y dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+        @keydown.enter.exact.prevent="sendMessage"
       ></textarea>
       <div v-if="sendError" class="p-2 text-sm text-red-600 bg-red-50 rounded-md">
         {{ sendError }}
