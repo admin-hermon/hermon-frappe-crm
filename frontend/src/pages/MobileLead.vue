@@ -15,7 +15,10 @@
           "
         >
           <template #default="{ open }">
-            <Button :label="lead.data.status">
+            <Button 
+              :label="lead.data.status"
+              :disabled="!featureFlagsStore.featureFlags.leadEditingEnabled"
+            >
               <template #prefix>
                 <IndicatorIcon :class="getLeadStatus(lead.data.status).color" />
               </template>
@@ -46,6 +49,7 @@
         :actions="lead.data._customActions"
       />
       <Button
+        v-if="featureFlagsStore.featureFlags.leadEditingEnabled"
         :label="__('Convert')"
         variant="solid"
         @click="showConvertToDealModal = true"
@@ -180,6 +184,7 @@ import { getSettings } from '@/stores/settings'
 import { globalStore } from '@/stores/global'
 import { statusesStore } from '@/stores/statuses'
 import { getMeta } from '@/stores/meta'
+import { useFeatureFlagsStore } from '@/stores/featureFlags'
 import {
   whatsappEnabled,
   callEnabled,
@@ -205,6 +210,7 @@ const { brand } = getSettings()
 const { $dialog, $socket } = globalStore()
 const { statusOptions, getLeadStatus } = statusesStore()
 const { doctypeMeta } = getMeta('CRM Lead')
+const featureFlagsStore = useFeatureFlagsStore()
 const route = useRoute()
 const router = useRouter()
 
@@ -246,6 +252,11 @@ onMounted(() => {
 const reload = ref(false)
 
 function updateLead(fieldname, value, callback) {
+  // Silently prevent updates when lead editing is disabled
+  if (!featureFlagsStore.featureFlags.leadEditingEnabled) {
+    return
+  }
+
   value = Array.isArray(fieldname) ? '' : value
 
   if (!Array.isArray(fieldname) && validateRequired(fieldname, value)) return
@@ -410,6 +421,11 @@ const sections = createResource({
 })
 
 function updateField(name, value, callback) {
+  // Silently prevent updates when lead editing is disabled
+  if (!featureFlagsStore.featureFlags.leadEditingEnabled) {
+    return
+  }
+
   updateLead(name, value, () => {
     lead.data[name] = value
     callback?.()

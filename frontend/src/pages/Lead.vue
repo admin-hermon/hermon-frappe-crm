@@ -21,7 +21,10 @@
         :options="statusOptions('lead', updateField, lead.data._customStatuses)"
       >
         <template #default="{ open }">
-          <Button :label="lead.data.status">
+          <Button 
+            :label="lead.data.status"
+            :disabled="!featureFlagsStore.featureFlags.leadEditingEnabled"
+          >
             <template #prefix>
               <IndicatorIcon :class="getLeadStatus(lead.data.status).color" />
             </template>
@@ -35,7 +38,7 @@
         </template>
       </Dropdown>
       <Button
-        v-if="dealsModule?.meta?.show"
+        v-if="dealsModule?.meta?.show && featureFlagsStore.featureFlags.leadEditingEnabled"
         :label="__('Convert to Deal')"
         variant="solid"
         @click="showConvertToDealModal = true"
@@ -76,6 +79,7 @@
                 :image="lead.data.image"
               />
               <component
+                v-if="featureFlagsStore.featureFlags.leadEditingEnabled"
                 :is="lead.data.image ? Dropdown : 'div'"
                 v-bind="
                   lead.data.image
@@ -160,7 +164,7 @@
                     </Button>
                   </div>
                 </Tooltip>
-                <Tooltip :text="__('Attach a file')">
+                <Tooltip v-if="featureFlagsStore.featureFlags.leadEditingEnabled" :text="__('Attach a file')">
                   <div>
                     <Button class="h-7 w-7" @click="showFilesUploader = true">
                       <AttachmentIcon class="h-4 w-4" />
@@ -358,6 +362,7 @@ import { usersStore } from '@/stores/users'
 import { globalStore } from '@/stores/global'
 import { statusesStore } from '@/stores/statuses'
 import { getMeta } from '@/stores/meta'
+import { useFeatureFlagsStore } from '@/stores/featureFlags'
 import {
   whatsappEnabled,
   callEnabled,
@@ -387,6 +392,7 @@ const { isManager } = usersStore()
 const { $dialog, $socket, makeCall } = globalStore()
 const { statusOptions, getLeadStatus, getDealStatus } = statusesStore()
 const { doctypeMeta } = getMeta('CRM Lead')
+const featureFlagsStore = useFeatureFlagsStore()
 
 const { updateOnboardingStep } = useOnboarding('frappecrm')
 
@@ -446,6 +452,11 @@ const reload = ref(false)
 const showFilesUploader = ref(false)
 
 function updateLead(fieldname, value, callback) {
+  // Silently prevent updates when lead editing is disabled
+  if (!featureFlagsStore.featureFlags.leadEditingEnabled) {
+    return
+  }
+
   value = Array.isArray(fieldname) ? '' : value
 
   if (!Array.isArray(fieldname) && validateRequired(fieldname, value)) return
@@ -616,6 +627,11 @@ const sections = createResource({
 })
 
 function updateField(name, value, callback) {
+  // Silently prevent updates when lead editing is disabled
+  if (!featureFlagsStore.featureFlags.leadEditingEnabled) {
+    return
+  }
+
   updateLead(name, value, () => {
     lead.data[name] = value
     callback?.()

@@ -25,6 +25,7 @@ import { capture } from '@/telemetry'
 import { call } from 'frappe-ui'
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useFeatureFlagsStore } from '@/stores/featureFlags'
 
 const props = defineProps({
   doctype: {
@@ -46,6 +47,7 @@ const list = defineModel()
 const router = useRouter()
 
 const { $dialog, $socket } = globalStore()
+const featureFlagsStore = useFeatureFlagsStore()
 
 const showEditModal = ref(false)
 const selectedValues = ref([])
@@ -174,14 +176,17 @@ const customListActions = ref([])
 function bulkActions(selections, unselectAll) {
   let actions = []
 
-  if (!props.options.hideEdit) {
+  // Check if lead editing is disabled for CRM Lead doctype
+  const isLeadEditingDisabled = props.doctype === 'CRM Lead' && !featureFlagsStore.featureFlags.leadEditingEnabled
+
+  if (!props.options.hideEdit && !isLeadEditingDisabled) {
     actions.push({
       label: __('Edit'),
       onClick: () => editValues(selections, unselectAll),
     })
   }
 
-  if (!props.options.hideDelete) {
+  if (!props.options.hideDelete && !isLeadEditingDisabled) {
     actions.push({
       label: __('Delete'),
       onClick: () => deleteValues(selections, unselectAll),
@@ -199,7 +204,7 @@ function bulkActions(selections, unselectAll) {
     })
   }
 
-  if (props.doctype === 'CRM Lead') {
+  if (props.doctype === 'CRM Lead' && !isLeadEditingDisabled) {
     actions.push({
       label: __('Convert to Deal'),
       onClick: () => convertToDeal(selections, unselectAll),

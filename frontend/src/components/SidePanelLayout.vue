@@ -385,6 +385,7 @@ import { usersStore } from '@/stores/users'
 import { isMobileView } from '@/composables/settings'
 import { getFormat, evaluateDependsOnValue } from '@/utils'
 import { flt } from '@/utils/numberFormat.js'
+import { useFeatureFlagsStore } from '@/stores/featureFlags'
 import { Tooltip, DateTimePicker, DatePicker } from 'frappe-ui'
 import { ref, computed } from 'vue'
 
@@ -408,6 +409,7 @@ const props = defineProps({
 const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
   getMeta(props.doctype)
 const { isManager, getUser } = usersStore()
+const featureFlagsStore = useFeatureFlagsStore()
 
 const emit = defineEmits(['update', 'reload'])
 
@@ -449,6 +451,8 @@ function parsedField(field) {
 
   let _field = {
     ...field,
+    // Make fields read-only for leads when editing is disabled
+    read_only: (props.doctype === 'CRM Lead' && !featureFlagsStore.featureFlags.leadEditingEnabled) ? true : field.read_only,
     filters: field.link_filters && JSON.parse(field.link_filters),
     placeholder: field.placeholder || field.label,
     display_via_depends_on: evaluateDependsOnValue(
@@ -467,11 +471,15 @@ function parsedField(field) {
 
 function parsedSection(section, editButtonAdded) {
   let isContactSection = section.name == 'contacts_section'
+  // Hide edit button for leads when editing is disabled
+  let isLeadEditingDisabled = props.doctype === 'CRM Lead' && !featureFlagsStore.featureFlags.leadEditingEnabled
+  
   section.showEditButton = !(
     isMobileView.value ||
     !isManager() ||
     isContactSection ||
-    editButtonAdded
+    editButtonAdded ||
+    isLeadEditingDisabled
   )
 
   section.visible =
