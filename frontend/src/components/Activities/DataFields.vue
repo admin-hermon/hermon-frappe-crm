@@ -13,14 +13,14 @@
     </div>
     <div class="flex gap-1">
       <Button
-        v-if="isManager() && !isMobileView"
+        v-if="isManager() && !isMobileView && !(doctype === 'CRM Lead' && !featureFlagsStore.featureFlags.leadEditingEnabled)"
         @click="showDataFieldsModal = true"
       >
         <EditIcon class="h-4 w-4" />
       </Button>
       <Button
         label="Save"
-        :disabled="!data.isDirty"
+        :disabled="(doctype === 'CRM Lead' && !featureFlagsStore.featureFlags.leadEditingEnabled) || !data.isDirty"
         variant="solid"
         :loading="data.save.loading"
         @click="saveChanges"
@@ -63,6 +63,7 @@ import { Badge, createResource, createDocumentResource } from 'frappe-ui'
 import LoadingIndicator from '@/components/Icons/LoadingIndicator.vue'
 import { createToast } from '@/utils'
 import { usersStore } from '@/stores/users'
+import { useFeatureFlagsStore } from '@/stores/featureFlags'
 import { isMobileView } from '@/composables/settings'
 import { ref, watch } from 'vue'
 
@@ -78,6 +79,7 @@ const props = defineProps({
 })
 
 const { isManager } = usersStore()
+const featureFlagsStore = useFeatureFlagsStore()
 
 const showDataFieldsModal = ref(false)
 
@@ -112,6 +114,10 @@ const tabs = createResource({
 })
 
 function saveChanges() {
+  // Silently prevent saves when lead editing is disabled
+  if (props.doctype === 'CRM Lead' && !featureFlagsStore.featureFlags.leadEditingEnabled) {
+    return
+  }
   data.save.submit()
 }
 
