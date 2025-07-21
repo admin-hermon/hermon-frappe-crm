@@ -123,12 +123,23 @@ class Twilio:
 
 		return client
 	
-	def send_sms(self, from_number: str, to_number: str, message: str) -> dict:
-		twilio_message_create_response = self.twilio_client.messages.create(
-			to=to_number,
-			body=message,
-			from_=from_number
-		)
+	def send_sms(self, to_number: str, message: str, messaging_service_sid: str = None, from_number: str = None) -> dict:
+		"""Send SMS using messaging service or from number"""
+		# Prepare message parameters
+		message_params = {
+			'to': to_number,
+			'body': message
+		}
+		
+		# Use messaging service if provided, otherwise use from_number
+		if messaging_service_sid:
+			message_params['messaging_service_sid'] = messaging_service_sid
+		elif from_number:
+			message_params['from_'] = from_number
+		else:
+			raise ValueError("Either messaging_service_sid or from_number must be provided")
+
+		twilio_message_create_response = self.twilio_client.messages.create(**message_params)
 
 		return {
 			'sid': twilio_message_create_response.sid,

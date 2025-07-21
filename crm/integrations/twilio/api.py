@@ -211,6 +211,8 @@ def get_sms_history(lead_identifier: str) -> list:
 
 @frappe.whitelist()
 def send_sms(lead_identifier: str, message: str):
+	from crm.fcrm.doctype.crm_sms_settings.crm_sms_settings import CRMSMSSettings
+	
 	lead_doc = frappe.get_doc('CRM Lead', lead_identifier)
 
 	if not lead_doc:
@@ -222,19 +224,23 @@ def send_sms(lead_identifier: str, message: str):
 	if not frappe.has_permission("SMS Message", "create"):
 		frappe.throw(_("Your user role does not allow you to send SMS. Please contact your administrator."))
 
-	from_number = frappe.db.get_value(
-		"CRM Telephony Agent", frappe.session.user, "twilio_number"
-	)
-
-	if not from_number:
-		frappe.throw(_("No Twilio number is configured for your user. Please contact your administrator."))
+	# Try to get default messaging service, otherwise fall back to telephony agent number
+	messaging_service_sid = CRMSMSSettings.get_default_messaging_service_sid()
+	from_number = None
+	
+	if not messaging_service_sid:
+		from_number = frappe.db.get_value(
+			"CRM Telephony Agent", frappe.session.user, "twilio_number"
+		)
+		if not from_number:
+			frappe.throw(_("No Twilio number is configured for your user. Please contact your administrator."))
 
 	# Create the SMS record with a "Sending" status first and commit it.
 	# This ensures we have a reliable record of our intent to send.
 	sms = frappe.new_doc('SMS Message')
 	sms.lead = lead_doc.name
 	sms.direction = "Outgoing"
-	sms.from_number = from_number
+	sms.from_number = from_number or "Messaging Service"
 	sms.to_number = lead_doc.mobile_no
 	sms.message = message
 	sms.status = "sending"
@@ -244,11 +250,19 @@ def send_sms(lead_identifier: str, message: str):
 	# Now, attempt to send the message via the external API.
 	try:
 		twilio = Twilio.connect()
-		sent_message = twilio.send_sms(from_number, lead_doc.mobile_no, message)
+		sent_message = twilio.send_sms(
+			to_number=lead_doc.mobile_no,
+			message=message,
+			messaging_service_sid=messaging_service_sid,
+			from_number=from_number
+		)
 
 		# If successful, update the local record with the final details and commit.
 		sms.status = sent_message.get('status') or "sent"
 		sms.twilio_sid = sent_message.get('sid')
+		# Update from_number with actual number used by Twilio (important for messaging services)
+		if sent_message.get('from_number'):
+			sms.from_number = sent_message.get('from_number')
 		sms.save()
 		frappe.db.commit()
 	except Exception as e:

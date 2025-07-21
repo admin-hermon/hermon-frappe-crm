@@ -1,0 +1,62 @@
+{
+    "actions": [],
+    "allow_rename": 1,
+    "creation": "2025-03-10 12:00:00.000000",
+    "doctype": "DocType",
+    "engine": "InnoDB",
+    "field_order": [
+        "messaging_service_name",
+        "messaging_service_sid",
+        "column_break_main",
+        "is_default"
+    ],
+    "fields": [
+        {
+            "fieldname": "messaging_service_name",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Messaging Service Name",
+            "reqd": 1
+        },
+        {
+            "description": "Twilio Messaging Service SID (starts with MG)",
+            "fieldname": "messaging_service_sid",
+            "fieldtype": "Data",
+            "in_list_view": 1,
+            "label": "Messaging Service SID",
+            "reqd": 1
+        },
+        {
+            "default": "0",
+            "fieldname": "is_default",
+            "fieldtype": "Check",
+            "in_list_view": 1,
+            "label": "Is Default"
+        }
+    ],
+    "index_web_pages_for_search": 1,
+    "links": [],
+    "modified": "2025-03-10 12:00:00.000000",
+    "modified_by": "Administrator",
+    "module": "FCRM",
+    "name": "CRM SMS Settings",
+    "naming_rule": "By fieldname",
+    "autoname": "field:messaging_service_name",
+    "owner": "Administrator",
+    "permissions": [
+        {
+            "create": 1,
+            "delete": 1,
+            "email": 1,
+            "print": 1,
+            "read": 1,
+            "role": "System Manager",
+            "share": 1,
+            "write": 1
+        }
+    ],
+    "sort_field": "modified",
+    "sort_order": "DESC",
+    "states": [],
+    "track_changes": 1
+}
