@@ -545,6 +545,11 @@ usePageMeta(() => {
 const tabs = computed(() => {
   let tabOptions = [
     {
+      name: 'Activity',
+      label: __('Activity'),
+      icon: ActivityIcon,
+    },
+    {
       name: 'Calls',
       label: __('Calls'),
       icon: PhoneIcon,
@@ -564,11 +569,6 @@ const tabs = computed(() => {
       label: __('WhatsApp'),
       icon: WhatsAppIcon,
       condition: () => whatsappEnabled.value,
-    },
-    {
-      name: 'Activity',
-      label: __('Activity'),
-      icon: ActivityIcon,
     },
     {
       name: 'Comments',
