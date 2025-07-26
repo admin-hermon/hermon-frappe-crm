@@ -99,9 +99,22 @@ def accept_invitation(key: str | None = None):
 
 @frappe.whitelist()
 def invite_by_email(emails: str, role: str):
-	frappe.only_for("Sales Manager")
+	# Define allowed roles for inviting and being invited
+	roles_that_can_invite = ["Sales Manager", "User Inviter"]
+	roles_that_can_be_invited = ["Sales Manager", "Sales User"]
+	
+	# Check if current user can send invites
+	current_user_roles = frappe.get_roles()
+	if not any(role in current_user_roles for role in roles_that_can_invite):
+		frappe.throw("Not permitted", frappe.PermissionError)
 
-	if role not in ["Sales Manager", "Sales User"]:
+	# Granular control: User Inviter can only invite Sales User
+	if "User Inviter" in current_user_roles and "Sales Manager" not in current_user_roles:
+		if role != "Sales User":
+			frappe.throw("You can only invite users with Sales User role")
+
+	# Check if the role being assigned is valid
+	if role not in roles_that_can_be_invited:
 		frappe.throw("Cannot invite for this role")
 
 	if not emails:
@@ -114,7 +127,7 @@ def invite_by_email(emails: str, role: str):
 	existing_members = frappe.db.get_all("User", filters={"email": ["in", email_list]}, pluck="email")
 	existing_invites = frappe.db.get_all(
 		"CRM Invitation",
-		filters={"email": ["in", email_list], "role": ["in", ["Sales Manager", "Sales User"]]},
+		filters={"email": ["in", email_list], "role": ["in", roles_that_can_be_invited]},
 		pluck="email",
 	)
 

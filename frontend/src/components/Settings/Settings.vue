@@ -71,7 +71,7 @@ import {
 import { Dialog, Button, Avatar } from 'frappe-ui'
 import { ref, markRaw, computed, watch, h } from 'vue'
 
-const { isManager, isAgent, getUser } = usersStore()
+const { isManager, isAgent, isInviter, getUser } = usersStore()
 
 const user = computed(() => getUser() || {})
 
@@ -101,7 +101,7 @@ const tabs = computed(() => {
           label: __('Invite Members'),
           icon: InviteIcon,
           component: markRaw(InviteMemberPage),
-          condition: () => isManager(),
+          condition: () => isManager() || isInviter(),
         },
         {
           label: __('Email Accounts'),
