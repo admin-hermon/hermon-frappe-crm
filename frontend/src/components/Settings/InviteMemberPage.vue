@@ -27,10 +27,7 @@
           class="mt-4"
           v-model="role"
           :label="__('Invite as')"
-          :options="[
-            { label: __('Regular Access'), value: 'Sales User' },
-            { label: __('Manager Access'), value: 'Sales Manager' },
-          ]"
+          :options="inviteOptions"
           :description="description"
         />
       </div>
@@ -98,12 +95,28 @@ import {
 } from 'frappe-ui'
 import { useOnboarding } from 'frappe-ui/frappe'
 import { ref, computed } from 'vue'
+import { usersStore } from '@/stores/users'
 
 const { updateOnboardingStep } = useOnboarding('frappecrm')
+const { isManager } = usersStore()
 
 const invitees = ref([])
 const role = ref('Sales User')
 const error = ref(null)
+
+// Compute available options based on user role
+const inviteOptions = computed(() => {
+  const options = [
+    { label: __('Regular Access'), value: 'Sales User' }
+  ]
+  
+  // Only Sales Managers can invite other Sales Managers
+  if (isManager()) {
+    options.push({ label: __('Manager Access'), value: 'Sales Manager' })
+  }
+  
+  return options
+})
 
 const description = computed(() => {
   return {
