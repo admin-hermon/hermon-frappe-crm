@@ -329,7 +329,7 @@ import { ref, computed, reactive, h } from 'vue'
 
 const { getFormattedPercent, getFormattedFloat, getFormattedCurrency } =
   getMeta('CRM Lead')
-const { makeCall } = globalStore()
+const { makeCall, $dialog } = globalStore()
 const { getUser } = usersStore()
 const { getLeadStatus } = statusesStore()
 const powerDialer = powerDialerStore()
@@ -607,14 +607,32 @@ function startPowerDialer() {
     return
   }
 
-  // Start the power dialer session
-  powerDialer.startSession(callableLeads)
-  
-  createToast({
-    title: 'Power Dialer Started',
-    text: `Starting calls for ${callableLeads.length} leads`,
-    icon: 'check',
-    iconClasses: 'text-green-500',
+  // Show confirmation dialog before starting power dialer
+  $dialog({
+    title: __('Start Power Dialer'),
+    message: __('Are you sure you want to start calling {0} leads? This will initiate a series of phone calls.', [
+      callableLeads.length,
+    ]),
+    variant: 'solid',
+    theme: 'blue',
+    actions: [
+      {
+        label: __('Yes, Start Calling'),
+        variant: 'solid',
+        onClick: (close) => {
+          // Start the power dialer session
+          powerDialer.startSession(callableLeads)
+          
+          createToast({
+            title: 'Power Dialer Started',
+            text: `Starting calls for ${callableLeads.length} leads`,
+            icon: 'check',
+            iconClasses: 'text-green-500',
+          })
+          close()
+        },
+      },
+    ],
   })
 }
 
