@@ -244,7 +244,7 @@ class TwilioCallDetails:
 			caller = Twilio.emailid_from_identity(identity) if identity else ""
 		else:
 			attender = get_the_call_attender(from_number)
-			receiver = attender["name"] if attender else ""
+			receiver = attender if attender else ""
 
 		return {
 			"type": direction,
