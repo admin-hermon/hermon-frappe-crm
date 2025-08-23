@@ -64,20 +64,19 @@ class CustomEmailTemplate(EmailTemplate):
 				return
 			
 			for filename in private_urls:
-				file_doc = frappe.get_doc("File", {"file_name": filename})
+				try:					
+					file_doc = frappe.get_doc("File", {"file_name": filename})
 
-				if file_doc.is_private:
+					if not file_doc.is_private:
+						continue
+
 					file_doc.is_private = 0
 					file_doc.save()
 
-			# Update template content to use public URLs - cover all occurences (all images)
-			updated_response = re.sub(r'/private/files/', '/files/', self.response)
-
-			if updated_response != self.response:
-				# Use db.set_value to avoid triggering save hooks again
-				# This prevents infinite loops while ensuring the change is persisted
-				frappe.db.set_value("Email Template", self.name, "response", updated_response)
-				self.response = updated_response
+					self.response = re.sub(rf'/private/files/{re.escape(filename)}', f'/files/{filename}', self.response)
+					frappe.db.set_value("Email Template", self.name, "response", self.response)
+				except frappe.DoesNotExistError:
+					continue
 		except Exception as e:
 			frappe.log_error(frappe.get_traceback(), "Failed to change private files to public when saving the email template")
 
