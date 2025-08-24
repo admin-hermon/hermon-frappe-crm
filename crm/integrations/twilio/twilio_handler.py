@@ -5,8 +5,9 @@ from twilio.jwt.access_token import AccessToken
 from twilio.jwt.access_token.grants import VoiceGrant
 from twilio.rest import Client as TwilioClient
 from twilio.twiml.voice_response import Dial, VoiceResponse
+from crm.api.doc import get_assigned_users
 
-from .utils import get_public_url, merge_dicts
+from .utils import get_public_url
 
 
 class Twilio:
@@ -151,44 +152,14 @@ class IncomingCall:
 		* Check call attender settings and forward the call to Phone
 		"""
 		twilio = Twilio.connect()
-		owners = get_twilio_number_owners(self.to_number)
-		attender = get_the_call_attender(owners, self.from_number)
+		attender = get_the_call_attender(self.from_number)
 
 		if not attender:
 			resp = VoiceResponse()
 			resp.say(_("Agent is unavailable to take the call, please call after some time."))
 			return resp
 
-		if attender["call_receiving_device"] == "Phone":
-			return twilio.generate_twilio_dial_response(self.from_number, attender["mobile_no"])
-		else:
-			return twilio.generate_twilio_client_response(twilio.safe_identity(attender["name"]))
-
-
-def get_twilio_number_owners(phone_number):
-	"""Get list of users who is using the phone_number.
-	>>> get_twilio_number_owners("+11234567890")
-	{
-		'owner1': {'name': '..', 'mobile_no': '..', 'call_receiving_device': '...'},
-		'owner2': {....}
-	}
-	"""
-	# remove special characters from phone number and get only digits also remove white spaces
-	# keep + sign in the number at start of the number
-	phone_number = "".join([c for c in phone_number if c.isdigit() or c == "+"])
-	user_voice_settings = frappe.get_all(
-		"CRM Telephony Agent",
-		filters={"twilio_number": phone_number},
-		fields=["name", "call_receiving_device"],
-	)
-	user_wise_voice_settings = {user["name"]: user for user in user_voice_settings}
-
-	user_general_settings = frappe.get_all(
-		"User", filters=[["name", "IN", user_wise_voice_settings.keys()]], fields=["name", "mobile_no"]
-	)
-	user_wise_general_settings = {user["name"]: user for user in user_general_settings}
-
-	return merge_dicts(user_wise_general_settings, user_wise_voice_settings)
+		return twilio.generate_twilio_client_response(twilio.safe_identity(attender))
 
 
 def get_active_loggedin_users(users):
@@ -204,27 +175,32 @@ def get_active_loggedin_users(users):
 	return [row[0] for row in set(rows)]
 
 
-def get_the_call_attender(owners, caller=None):
-	"""Get attender details from list of owners"""
-	if not owners:
-		return
-	current_loggedin_users = get_active_loggedin_users(list(owners.keys()))
+def get_the_call_attender(caller_number: str) -> str:
+	"""
+	Get the user name of the user most appropriate to take the incomming call based on lead assignees
+	
+	Note: In the original CRM implementation calls were tailored towards a 1 - 1 relationship between a user and a phone number
+	via the Telephony Agent doctype and this method used to get the owner of a specific number
 
-	if len(current_loggedin_users) > 1 and caller:
-		deal_owner = frappe.db.get_value("CRM Deal", {"mobile_no": caller}, "deal_owner")
-		if not deal_owner:
-			deal_owner = frappe.db.get_value(
-				"CRM Lead", {"mobile_no": caller, "converted": False}, "lead_owner"
-			)
-		for user in current_loggedin_users:
-			if user == deal_owner:
-				current_loggedin_users = [user]
-
-	for name, details in owners.items():
-		if (details["call_receiving_device"] == "Phone" and details["mobile_no"]) or (
-			details["call_receiving_device"] == "Computer" and name in current_loggedin_users
-		):
-			return details
+	Our usecase is more tailored towards a departmant of users sharing the entire frappe site instance and sharing a phone number / email address etc..
+	"""
+	# Find lead by caller number
+	lead = frappe.db.get_value("CRM Lead", {"mobile_no": caller_number}, "name")
+	if not lead:
+		return None
+	
+	# Get lead assignees
+	assignees = get_assigned_users("CRM Lead", lead)
+	if not assignees:
+		return None
+	
+	# Check which assignees are logged in
+	logged_in_assignees = get_active_loggedin_users(assignees)
+	if not logged_in_assignees:
+		return None
+	
+	# Use first logged-in assignee
+	return logged_in_assignees[0]
 
 
 class TwilioCallDetails:
@@ -267,9 +243,8 @@ class TwilioCallDetails:
 			identity = caller.replace("client:", "").strip()
 			caller = Twilio.emailid_from_identity(identity) if identity else ""
 		else:
-			owners = get_twilio_number_owners(to_number)
-			attender = get_the_call_attender(owners, from_number)
-			receiver = attender["name"] if attender else ""
+			attender = get_the_call_attender(from_number)
+			receiver = attender if attender else ""
 
 		return {
 			"type": direction,

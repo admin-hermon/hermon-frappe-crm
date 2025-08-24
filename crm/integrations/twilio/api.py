@@ -7,6 +7,7 @@ from werkzeug.wrappers import Response
 from crm.api.doc import get_assigned_users
 from crm.fcrm.doctype.crm_notification.crm_notification import notify_user
 from crm.integrations.api import get_contact_by_phone_number
+from .phone_number_helper import get_from_number
 
 from .twilio_handler import IncomingCall, Twilio, TwilioCallDetails
 
@@ -39,11 +40,6 @@ def generate_access_token():
 def voice(**kwargs):
 	"""This is a webhook called by twilio to get instructions when the voice call request comes to twilio server."""
 
-	def _get_caller_number(caller):
-		identity = caller.replace("client:", "").strip()
-		user = Twilio.emailid_from_identity(identity)
-		return frappe.db.get_value("CRM Telephony Agent", user, "twilio_number")
-
 	args = frappe._dict(kwargs)
 	twilio = Twilio.connect()
 	if not twilio:
@@ -53,7 +49,7 @@ def voice(**kwargs):
 	assert args.ApplicationSid == twilio.application_sid
 
 	# Generate TwiML instructions to make a call
-	from_number = _get_caller_number(args.Caller)
+	from_number = get_from_number(args.Caller, args.To)
 	resp = twilio.generate_twilio_dial_response(from_number, args.To)
 
 	call_details = TwilioCallDetails(args, call_from=from_number)
@@ -222,6 +218,10 @@ def send_sms(lead_identifier: str, message: str):
 	if not frappe.has_permission("SMS Message", "create"):
 		frappe.throw(_("Your user role does not allow you to send SMS. Please contact your administrator."))
 
+	# TODO: Enable SMS routing
+	# from_number = get_from_number(frappe.session.user, lead_doc.mobile_no)
+
+	# TODO: Remove this in favour of the above
 	from_number = frappe.db.get_value(
 		"CRM Telephony Agent", frappe.session.user, "twilio_number"
 	)
