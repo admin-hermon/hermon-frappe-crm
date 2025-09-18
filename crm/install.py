@@ -19,6 +19,12 @@ def after_install(force=False):
 	add_default_industries()
 	add_default_lead_sources()
 	add_standard_dropdown_items()
+	
+	# Critical patches that should run on new installations
+	create_user_inviter_role()
+	add_email_template_sales_user_permissions()
+	add_whatsapp_template_sales_user_and_system_manager_permissions()
+	
 	frappe.db.commit()
 
 
@@ -353,3 +359,147 @@ def add_standard_dropdown_items():
 		crm_settings.append("dropdown_items", item)
 
 	crm_settings.save()
+
+
+def create_user_inviter_role():
+	"""Create the User Inviter role if it doesn't exist"""
+	
+	role_name = "User Inviter"
+	
+	# Check if role already exists
+	if frappe.db.exists("Role", role_name):
+		return
+	
+	# Create the role
+	role_doc = frappe.get_doc({
+		"doctype": "Role",
+		"role_name": role_name,
+		"description": "Role for users who can invite new members but have limited access to other settings"
+	})
+	
+	role_doc.insert(ignore_permissions=True)
+
+
+def add_email_template_sales_user_permissions():
+	"""Add Email Template permissions for Sales User and System Manager"""
+	try:
+		# Roles that should have full access to Email Template
+		roles_to_add = [
+			"Sales User",
+			"System Manager",
+		]
+
+		for role in roles_to_add:
+			# Check if permission already exists
+			if not frappe.db.exists(
+				"Custom DocPerm", {"parent": "Email Template", "role": role}
+			):
+				frappe.log(f"Adding {role} permissions to Email Template")
+
+				perm_doc = frappe.get_doc(
+					{
+						"doctype": "Custom DocPerm",
+						"parent": "Email Template",
+						"parenttype": "DocType",
+						"parentfield": "permissions",
+						"role": role,
+						"read": 1,
+						"write": 1,
+						"create": 1,
+						"delete": 1,
+						"submit": 0,
+						"cancel": 0,
+						"amend": 0,
+						"permlevel": 0,
+						"if_owner": 0,
+						"report": 1,
+						"export": 1,
+						"import": 1,
+						"share": 1,
+						"print": 1,
+						"email": 1,
+					}
+				)
+				perm_doc.insert(ignore_permissions=True)
+
+				frappe.log(f"Successfully added {role} permissions to Email Template")
+			else:
+				frappe.log(f"{role} permissions for Email Template already exist")
+
+		# Clear cache after all permissions are added
+		frappe.clear_cache(doctype="Email Template")
+		frappe.log("Email Template permissions updated successfully")
+	except Exception as e:
+		frappe.log_error(f"Error adding Email Template permissions: {str(e)}")
+
+
+def add_whatsapp_template_sales_user_and_system_manager_permissions():
+	"""
+	Ensure WhatsApp Templates DocType permissions:
+	- System Manager: full access (ownership)
+	- Sales User: read/email/share only
+	"""
+	try:
+		doctype = "WhatsApp Templates"
+		roles = {
+			"System Manager": {
+				"read": 1,
+				"write": 1,
+				"create": 1,
+				"delete": 1,
+				"submit": 0,
+				"cancel": 0,
+				"amend": 0,
+				"permlevel": 0,
+				"if_owner": 0,
+				"report": 1,
+				"export": 1,
+				"import": 1,
+				"share": 1,
+				"print": 1,
+				"email": 1,
+			},
+			"Sales User": {
+				"read": 1,
+				"write": 0,
+				"create": 0,
+				"delete": 0,
+				"submit": 0,
+				"cancel": 0,
+				"amend": 0,
+				"permlevel": 0,
+				"if_owner": 0,
+				"report": 0,
+				"export": 0,
+				"import": 0,
+				"share": 1,
+				"print": 0,
+				"email": 1,
+			},
+		}
+
+		if not frappe.db.exists("DocType", doctype):
+			frappe.log(f"{doctype} DocType does not exist. Skipping permission patch.")
+			return
+
+		for role, perms in roles.items():
+			if frappe.db.exists("Custom DocPerm", {"parent": doctype, "role": role}):
+				frappe.log(f"{role} permissions for {doctype} already exist. Skipping patch.")
+				continue
+
+			frappe.log(f"Adding {role} permissions to {doctype}")
+			perm_doc = frappe.get_doc({
+				"doctype": "Custom DocPerm",
+				"parent": doctype,
+				"parenttype": "DocType",
+				"parentfield": "permissions",
+				"role": role,
+				**perms,
+			})
+			perm_doc.insert(ignore_permissions=True)
+			frappe.log(f"Successfully added {role} permissions to {doctype}")
+
+		frappe.clear_cache(doctype=doctype)
+		frappe.log(f"{doctype} permissions updated successfully")
+	except Exception as e:
+		frappe.log_error(f"Error updating {doctype} permissions: {str(e)}")

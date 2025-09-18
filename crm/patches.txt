@@ -1,3 +1,11 @@
+# Installation: When a Frappe app is installed on a new site, 
+# Frappe looks at the patches.txt file. 
+# Instead of immediately running the patches, it adds all of them to the Patches Log as already executed. 
+# This is done to ensure that a new installation doesn't immediately try to run a long history of patches that are only relevant for
+# an app that's been in development for a while.
+# To ensure your patches run on a new site installation, you need to run them in install.py as well (it's best to define them in install.py and reference them in patch scripts)
+# Using this approach you can cover both existing and new sites
+
 [pre_model_sync]
 # Patches added in this section will be executed before doctypes are migrated
 # Read docs to understand patches: https://frappeframework.com/docs/v14/user/en/database-migrations
