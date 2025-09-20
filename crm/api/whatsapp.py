@@ -335,5 +335,7 @@ def get_from_name(message):
 		else:
 			from_name = doc.get("lead_name")
 	else:
-		from_name = doc.get("first_name") + " " + doc.get("last_name")
+		first_name = doc.get("first_name") or ""
+		last_name = doc.get("last_name") or ""
+		from_name = f"{first_name} {last_name}".strip()
 	return from_name
