@@ -16,8 +16,6 @@ def notify_user(args):
 	Notify the assigned user
 	"""
 	args = frappe._dict(args)
-	if args.owner == args.assigned_to:
-		return
 
 	values = frappe._dict(
 		doctype="CRM Notification",
@@ -32,6 +30,13 @@ def notify_user(args):
 		reference_name=args.redirect_to_docname,
 	)
 
-	if frappe.db.exists("CRM Notification", values):
+	# Check for existing notifications to prevent duplicates using correct field mapping
+	if frappe.db.exists("CRM Notification", {
+		"reference_doctype": values.reference_doctype,
+		"reference_name": values.reference_name,
+		"to_user": values.to_user,
+		"type": values.type,
+	}):
 		return
+	
 	frappe.get_doc(values).insert(ignore_permissions=True)
