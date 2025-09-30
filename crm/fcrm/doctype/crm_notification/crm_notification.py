@@ -16,6 +16,8 @@ def notify_user(args):
 	Notify the assigned user
 	"""
 	args = frappe._dict(args)
+	if args.owner == args.assigned_to:
+		return
 
 	values = frappe._dict(
 		doctype="CRM Notification",
@@ -31,6 +33,13 @@ def notify_user(args):
 	)
 
 	# Check for existing notifications to prevent duplicates using correct field mapping
+	# Field usage reference for notification deduplication filter:
+	# - reference_doctype: The DocType of the document the notification is about (e.g., "CRM Lead", "Communication").
+	# - reference_name: The name (ID) of the document the notification is about (e.g., lead name, communication name).
+	# - to_user: The user who should receive the notification.
+	# - type: The type/category of notification (e.g., "Email", "SMS", "Mention").
+	# These fields together uniquely identify a notification for a user about a specific document and type,
+	# and are used to prevent duplicate notifications for the same event.
 	if frappe.db.exists("CRM Notification", {
 		"reference_doctype": values.reference_doctype,
 		"reference_name": values.reference_name,
