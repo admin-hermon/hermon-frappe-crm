@@ -24,8 +24,6 @@ def notify_user(args):
 		from_user=args.owner,
 		to_user=args.assigned_to,
 		type=args.notification_type,
-		message=args.message,
-		notification_text=args.notification_text,
 		notification_type_doctype=args.reference_doctype,
 		notification_type_doc=args.reference_docname,
 		reference_doctype=args.redirect_to_doctype,
