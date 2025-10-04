@@ -13,7 +13,7 @@ def on_update(doc, method):
 	# Map of communication mediums to their specific notification handlers.
 	# This makes it easy to add new communication channels in the future.
 	handler_map = {
-		"Email": _handle_incoming_email,
+		"Email": _notify_about_incoming_email,
 	}
 
 	handler = handler_map.get(doc.communication_medium)
@@ -22,8 +22,43 @@ def on_update(doc, method):
 		handler(doc)
 
 
-def _handle_incoming_email(doc):
-	"""Create a notification when an email is received and linked to a Lead."""
+def _notify_about_incoming_email(doc):
+	"""
+	Create a notification when an email is received and linked to a Lead.
+	
+	Communication Flow & Deduplication Logic:
+	========================================
+	
+	When an email arrives, Frappe processes it in multiple steps:
+	1. Email arrives → Communication document created (basic info, no lead reference)
+	2. Email processing → Communication updated with lead reference (reference_doctype, reference_name)
+	3. Content processing → Communication updated with processed content/timeline links
+	
+	Each update triggers the on_update hook, potentially creating duplicate notifications.
+	
+	How has_value_changed() Works:
+	=============================
+	
+	has_value_changed(fieldname) is a Frappe Document method that:
+	- Compares current field value with the value before the current save operation
+	- Returns True if the field value changed during this save
+	- Returns False if the field value remained the same
+	- Only works during document lifecycle events (validate, before_save, on_update, etc.)
+	
+	Example:
+	- Initial: reference_doctype = None
+	- Update 1: reference_doctype = "CRM Lead" → has_value_changed("reference_doctype") = True
+	- Update 2: reference_doctype = "CRM Lead" → has_value_changed("reference_doctype") = False
+	
+	Why This Deduplication Works:
+	============================
+	
+	We only send notifications when reference fields change (email gets linked to lead):
+	- First on_update: reference_doctype changes from None → "CRM Lead" → Notification sent ✓
+	- Second on_update: only content/timeline changes → No reference field changes → No notification ✓
+	
+	This ensures exactly one notification per email-to-lead linking event.
+	"""
 	try:
 		if doc.sent_or_received != "Received":
 			return
@@ -34,13 +69,8 @@ def _handle_incoming_email(doc):
 		if not doc.reference_name:
 			return
 		
-		if frappe.db.exists(
-			"CRM Notification",
-			{
-				"reference_doctype": "Communication",
-				"reference_docname": doc.name,
-			},
-		):
+		# Only notify when email is first linked to a lead (not on content updates)
+		if not (doc.has_value_changed("reference_doctype") or doc.has_value_changed("reference_name")):
 			return
 
 		notification_text = f"""
