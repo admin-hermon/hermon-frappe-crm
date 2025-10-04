@@ -13,7 +13,7 @@ def on_update(doc, method):
 	# Map of communication mediums to their specific notification handlers.
 	# This makes it easy to add new communication channels in the future.
 	handler_map = {
-		"Email": _handle_incoming_email,
+		"Email": _notify_about_incoming_email,
 	}
 
 	handler = handler_map.get(doc.communication_medium)
@@ -22,7 +22,7 @@ def on_update(doc, method):
 		handler(doc)
 
 
-def _handle_incoming_email(doc):
+def _notify_about_incoming_email(doc):
 	"""Create a notification when an email is received and linked to a Lead."""
 	try:
 		if doc.sent_or_received != "Received":
@@ -32,6 +32,10 @@ def _handle_incoming_email(doc):
 			return
 
 		if not doc.reference_name:
+			return
+		
+		# Prevent duplicate notifications
+		if not doc.is_new():
 			return
 
 		notification_text = f"""
