@@ -34,8 +34,8 @@ def _notify_about_incoming_email(doc):
 		if not doc.reference_name:
 			return
 		
-		# Prevent duplicate notifications
-		if not doc.is_new():
+		# Only notify when email is first linked to a lead (not on content updates)
+		if not (doc.has_value_changed("reference_doctype") or doc.has_value_changed("reference_name")):
 			return
 
 		notification_text = f"""
