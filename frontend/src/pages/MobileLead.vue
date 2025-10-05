@@ -252,9 +252,12 @@ onMounted(() => {
 const reload = ref(false)
 
 function updateLead(fieldname, value, callback) {
-  // Silently prevent updates when lead editing is disabled
+  // Allow updates for fields with ignore_user_permissions even when lead editing is disabled
   if (!featureFlagsStore.featureFlags.leadEditingEnabled) {
-    return
+    const fieldMeta = lead.data.fields_meta?.[fieldname]
+    if (!fieldMeta?.ignore_user_permissions) {
+      return // Silently prevent updates for fields that don't ignore the restriction
+    }
   }
 
   value = Array.isArray(fieldname) ? '' : value
