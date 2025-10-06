@@ -451,8 +451,8 @@ function parsedField(field) {
 
   let _field = {
     ...field,
-    // Make fields read-only for leads when editing is disabled
-    read_only: (props.doctype === 'CRM Lead' && !featureFlagsStore.featureFlags.leadEditingEnabled) ? true : field.read_only,
+    // Enhanced read-only logic with settings-based field permissions
+    read_only: getFieldReadOnlyStatus(field),
     filters: field.link_filters && JSON.parse(field.link_filters),
     placeholder: field.placeholder || field.label,
     display_via_depends_on: evaluateDependsOnValue(
@@ -467,6 +467,25 @@ function parsedField(field) {
 
   _field.visible = isFieldVisible(_field)
   return _field
+}
+
+function getFieldReadOnlyStatus(field) {
+  if (props.doctype === 'CRM Lead') {
+    // If general editing is enabled, use original read-only status
+    if (featureFlagsStore.featureFlags.leadEditingEnabled) {
+      return field.read_only
+    }
+    
+    // If general editing is disabled, check if field ignores this UI restriction
+    if (field.ignore_user_permissions) {
+      return field.read_only // Use original read-only status
+    }
+    
+    // Default to read-only for leads when editing is disabled
+    return true
+  }
+  
+  return field.read_only
 }
 
 function parsedSection(section, editButtonAdded) {
