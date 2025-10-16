@@ -47,6 +47,8 @@ class CRMTwilioSettings(Document):
 
 	def set_application_credentials(self, twilio):
 		"""Generate TwiML app credentials if not exist and update them."""
+		if self.twiml_sid:
+			return
 		credentials = self.get_application(twilio) or self.create_application(twilio)
 		self.twiml_sid = credentials.sid
 		frappe.db.set_value("CRM Twilio Settings", "CRM Twilio Settings", "twiml_sid", self.twiml_sid)
