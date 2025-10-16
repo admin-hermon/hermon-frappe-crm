@@ -62,9 +62,7 @@
    "depends_on": "enabled",
    "fieldname": "twiml_sid",
    "fieldtype": "Data",
-   "label": "TwiML SID",
-   "permlevel": 1,
-   "read_only": 1
+   "label": "TwiML SID"
   },
   {
    "fieldname": "section_break_ssqj",
