@@ -34,17 +34,13 @@
    "depends_on": "enabled",
    "fieldname": "api_key",
    "fieldtype": "Data",
-   "label": "API Key",
-   "permlevel": 1,
-   "read_only": 1
+   "label": "API Key"
   },
   {
    "depends_on": "enabled",
    "fieldname": "api_secret",
    "fieldtype": "Password",
-   "label": "API Secret",
-   "permlevel": 1,
-   "read_only": 1
+   "label": "API Secret"
   },
   {
    "fieldname": "column_break_idds",
