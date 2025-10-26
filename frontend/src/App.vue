@@ -1,6 +1,7 @@
 <template>
   <Layout v-if="session().isLoggedIn">
-    <router-view />
+    <!-- :key="$route.path" is used to force a reload of the page when the route changes -->
+    <router-view :key="$route.path" /> 
   </Layout>
   <Dialogs />
   <Toasts />

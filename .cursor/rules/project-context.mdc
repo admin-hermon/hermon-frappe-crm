@@ -1,0 +1,129 @@
+---
+description: General project context and development guidelines for Hermon Frappe CRM
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Hermon Frappe CRM - Project Context & Development Guidelines
+
+## Project Overview
+
+This is a **custom fork** of the official [Frappe CRM](https://frappe.io/crm) ([GitHub](https://github.com/frappe/crm)) that we maintain for our multi-tenant SaaS business model. We deploy this customized CRM along with [Frappe WhatsApp](https://cloud.frappe.io/marketplace/apps/frappe_whatsapp) ([GitHub](https://github.com/shridarpatil/frappe_whatsapp)) for each client on Frappe Cloud.
+
+### Business Model
+- **Multi-tenancy**: Each client gets their own Frappe site on Frappe Cloud
+- **Two-app deployment**: CRM + Frappe WhatsApp for every client
+- **Generic features**: All customizations must be applicable to all clients for operational simplicity
+
+## Key Customizations & Features
+
+### 1. SMS Integration
+- **Added SMS sending/receiving** via Twilio integration
+- **New DocType**: `SMS Message` for tracking SMS communications
+- **Frontend components**: `SmsBox.vue`, `SmsArea.vue` for SMS management
+- **API endpoints**: `send_sms()`, `get_sms_history()`, `handle_incoming_sms()`
+- **Real-time updates**: Socket events for SMS notifications
+
+### 2. Bug Fixes & Improvements
+- Fixed various upstream bugs from the original Frappe CRM
+- Enhanced communication handling and notifications
+- All communications now create notifications for users—this includes loading new events for emails (via the Communication doctype), SMS messages, and more.
+- Improved data migration and patch management
+- Better error handling and user experience
+- **Notification routing**: Fixed Email and SMS notifications to properly route to their respective tabs
+- **Navigation**: Fixed lead navigation to properly reload data when clicking notifications
+
+### 3. Disabled Features
+- **Deals**: Deal view and functionality are currently disabled
+- **Focus**: All development efforts focus solely on Lead management
+- Deal-related features and UI are present in the codebase but not actively maintained
+
+### 4. Planned Enhancements
+- **Kanban Activity Indicators**: Real-time counts for emails, WhatsApp, notes, tasks
+- **Kanban Column Counters**: Show total counts in column headers
+- Enhanced socket-based real-time updates
+- Better visual feedback for new activities
+
+## Development Guidelines
+
+### 1. Generic Feature Development
+- **ALL features must be generic** and applicable to all clients
+- Avoid client-specific customizations that can't be reused
+- Design features to work across different business models and industries
+- Consider scalability and multi-tenancy from the start
+
+### 2. Code Standards
+- Follow Frappe Framework conventions and patterns
+- Use existing Frappe UI components and design tokens
+- Maintain compatibility with Frappe Cloud deployment
+- Follow the existing code structure and organization
+
+### 3. Integration Patterns
+- **Twilio Integration**: Located in `crm/integrations/twilio/`
+- **WhatsApp Integration**: Uses external Frappe WhatsApp app
+- **Socket Events**: Follow existing patterns in `crm/api/whatsapp.py`
+- **API Endpoints**: Use `@frappe.whitelist()` decorator
+
+### 4. Frontend Development
+- **Framework**: Vue 3 with Frappe UI components
+- **Styling**: Use Frappe surface/ink tokens for theme adaptability
+- **Real-time**: Socket.IO for live updates
+- **Components**: Located in `frontend/src/components/`
+
+### 5. Backend Development
+- **DocTypes**: Located in `crm/fcrm/doctype/`
+- **API Functions**: Located in `crm/api/`
+- **Hooks**: Defined in `crm/hooks.py`
+- **Patches**: Located in `crm/patches/v1_0/`
+
+## File Structure Context
+
+```
+crm/
+├── api/                    # API endpoints and business logic
+├── fcrm/doctype/          # Custom DocTypes (SMS Message, etc.)
+├── integrations/          # Twilio, Exotel integrations
+├── overrides/             # Frappe core overrides
+├── patches/               # Database migration patches
+└── hooks.py               # Frappe app hooks
+
+frontend/
+├── src/components/        # Vue components
+├── src/pages/            # Main application pages
+├── src/stores/           # Pinia stores for state management
+└── src/socket.js         # Socket.IO client setup
+```
+
+## Deployment Context
+
+- **Platform**: Frappe Cloud (managed hosting)
+- **Apps**: CRM + Frappe WhatsApp for each client site
+- **Multi-tenancy**: Each client gets isolated Frappe site
+- **Updates**: Deploy updates across all client sites
+
+## Development Workflow
+
+1. **Feature Planning**: Ensure feature is generic and reusable
+2. **Development**: Follow Frappe conventions and existing patterns
+3. **Testing**: Test with multiple client scenarios
+4. **Deployment**: Deploy to all client sites on Frappe Cloud
+5. **Monitoring**: Track usage and performance across all tenants
+
+## Key Considerations
+
+- **Scalability**: Features must work with hundreds of client sites
+- **Maintenance**: Generic features reduce operational complexity
+- **Compatibility**: Maintain compatibility with upstream Frappe CRM
+- **Performance**: Consider impact on multi-tenant deployment
+- **Security**: Ensure proper data isolation between clients
+
+## Resources
+
+- **Upstream**: [Frappe CRM GitHub](https://github.com/frappe/crm)
+- **WhatsApp App**: [Frappe WhatsApp GitHub](https://github.com/shridarpatil/frappe_whatsapp)
+- **Frappe Cloud**: [cloud.frappe.io](https://cloud.frappe.io)
+- **Documentation**: [docs.frappe.io/crm](https://docs.frappe.io/crm)
+
+---
+
+**Remember**: Every feature you implement will be deployed to multiple client sites. Design for reusability, scalability, and operational simplicity.
