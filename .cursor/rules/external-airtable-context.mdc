@@ -8,7 +8,7 @@ alwaysApply: true
 
 ## Overview
 
-The CRM tools are mostly used as **lookup (read-only tools)** for external data sources. Currently, all of our clients maintain their data on Airtable, and we have automations set up to sync the data with the CRM database.
+The CRM tools are mostly used as **lookup (read-only tools)** for external data sources. Currently, all of our clients maintain their data on Airtable, and we have a shared automation script that users can trigger manually via a button on custom interfaces in Airtable to sync the data with the CRM database.
 
 ## Data Flow Architecture
 
@@ -26,95 +26,89 @@ We only allow editing of a small set of newly added custom fields which are not 
 
 ## Current Airtable Automations
 
-All automations are Airtable Scripting scripts that sync lead updates from Airtable to the respective Frappe CRM instances. Each client has their own automation script.
+All automations use a **single shared Airtable Scripting script** (`sync-lead.js`) that syncs lead updates from Airtable to the respective Frappe CRM instances. The automation is triggered **manually** by users clicking a button on custom interfaces on lead records in Airtable.
 
 ### Automation Structure
 
-Located in `/airtable-automations/` directory, organized by client:
-- Each client has their own subdirectory
-- Each automation script is named `lead-update.js`
+Located in `/airtable-automations/` directory:
+- **Single shared script**: `sync-lead.js` - used by all client sites
+- **Trigger mechanism**: Manual button click on custom interfaces in Airtable lead records
+- **User action**: Users click the button to upsert (create or update) the lead in the CRM
 - Scripts use Frappe API tokens for authentication
 - Scripts handle error tracing and validation
 
-### Active Automations
+### Automation Script (`sync-lead.js`)
 
-#### 1. MC Operations (`mc-operations/lead-update.js`)
-
-**Purpose**: Sync lead updates from MC Operations Airtable to MC Operations Frappe CRM
+**Purpose**: Upsert (create or update) CRM Lead records from Airtable to Frappe CRM
 
 **Synced Fields**:
 - `email` → `email`
 - `mobile_no` → `mobile_no`
 - `first_name` → `first_name` (mandatory field)
 - `last_name` → `last_name`
+- Additional custom fields can be added as needed (e.g., `custom_principal_debt`)
 
-**Endpoint**: `https://mc-operations.f.frappe.cloud/api/resource/CRM Lead/{recordId}`
+**Endpoint**: Configurable per site via `API_BASE_URL` (e.g., `https://site.f.frappe.cloud/api`)
 
-**Authentication**: Uses API token key pair for MC Operations site
+**Authentication**: Uses API token key pair (configured per site via `USER_API_KEY` and `USER_API_SECRET`)
+
+**Upsert Logic**:
+- First attempts to **UPDATE** the lead via PUT request to `/api/resource/CRM Lead/{recordId}`
+- If the lead doesn't exist (404 response), **CREATES** a new lead via POST request
+- Uses Airtable `recordId` as the CRM Lead `name` to maintain consistent identifiers between systems
 
 **Features**:
 - Validates mandatory fields (excludes empty mandatory fields from requests)
-- Handles array values (extracts first element)
-- Includes request tracing for debugging
-- Comprehensive error handling
-
-#### 2. Vindex (`vindex/lead-update.js`)
-
-**Purpose**: Sync lead updates from Vindex Airtable to Vindex Frappe CRM
-
-**Synced Fields**:
-- `email` → `email`
-- `mobile_no` → `mobile_no`
-- `custom_principal_debt` → `custom_principal_debt`
-- `first_name` → `first_name` (mandatory field)
-- `last_name` → `last_name`
-
-**Endpoint**: `https://vindex.f.frappe.cloud/api/resource/CRM Lead/{recordId}`
-
-**Authentication**: Uses API token key pair for Vindex site
-
-**Features**:
-- Same validation and error handling as MC Operations
-- Includes custom field mapping for `principal_debt`
-- Request tracing and error reporting
+- Handles array values (extracts first element via `normalizeFieldValue()`)
+- Includes console logging for debugging
+- Comprehensive error handling with detailed error messages
+- Skips sync if validation fails (logs warning instead of throwing error)
 
 ### Automation Script Features
 
-Both automation scripts share common features:
-
 1. **Field Validation**:
-   - Mandatory fields are excluded from requests if they don't have values
+   - Validates mandatory fields before sending requests
    - Prevents validation errors on the CRM side
-   - Uses `safeFieldValue()` function to handle arrays and null values
+   - Uses `normalizeFieldValue()` function to handle arrays and null values
+   - Skips sync entirely if mandatory fields are missing
 
 2. **Error Handling**:
-   - Comprehensive error catching and re-throwing
-   - Request tracing includes status, request body, and response
-   - Errors are logged for debugging without breaking Airtable automations
+   - Comprehensive error catching and detailed error messages
+   - Console logging for successful operations and errors
+   - Errors include HTTP status codes and response bodies
+   - Graceful handling of missing leads (creates new record)
 
 3. **Data Processing**:
    - Handles array fields (extracts first element)
    - Processes null/undefined values safely
-   - Filters empty mandatory fields before sending requests
+   - Validates mandatory fields before sending requests
 
 4. **Authentication**:
-   - Each client site has its own API token pair
-   - Tokens are embedded in the automation scripts
-   - Uses Frappe API token authentication format
+   - Each client site configures their own API token pair
+   - Tokens are configured in the script via `input.config()` in Airtable
+   - Uses Frappe API token authentication format (`token {key}:{secret}`)
+
+5. **Manual Trigger**:
+   - Automation is triggered by user action (button click)
+   - Users have control over when to sync records
+   - Button is placed on custom interfaces on lead records in Airtable
 
 ## Development Guidelines
 
-### Adding New Automations
+### Setting Up Automation for New Sites
 
-When adding new automations in the future:
+When setting up the automation for a new client site:
 
-1. **Create Client Directory**: Create a new subdirectory under `/airtable-automations/` for each new client
-2. **Use Template**: Base new automations on existing `lead-update.js` scripts
-3. **Configure Fields**: Map Airtable fields to CRM Lead fields as needed
-4. **Get API Tokens**: Obtain API token key pair for the client's Frappe Cloud site
-5. **Update Endpoint**: Set the correct Frappe Cloud endpoint URL
-6. **Test Validation**: Ensure mandatory field validation works correctly
-7. **Error Handling**: Maintain comprehensive error handling and tracing
+1. **Use Shared Script**: Use the existing `sync-lead.js` script from `/airtable-automations/`
+2. **Configure in Airtable**: Set up the script in Airtable Scripting with the following configuration:
+   - `USER_API_KEY`: API key for the client's Frappe Cloud site
+   - `USER_API_SECRET`: API secret for the client's Frappe Cloud site
+   - `API_BASE_URL`: Base URL for the client's Frappe Cloud site (e.g., `https://site.f.frappe.cloud/api`)
+   - Map Airtable fields to script input variables (e.g., `recordId`, `leadEmail`, `leadPhone`, `firstName`, `lastName`)
+3. **Add Custom Fields**: If needed, add custom field mappings in the script (e.g., `custom_principal_debt`)
+4. **Create Button Interface**: Create a custom interface button on lead records that triggers the script
+5. **Test Validation**: Ensure mandatory field validation works correctly
+6. **Test Upsert Logic**: Verify both update (existing lead) and create (new lead) scenarios work
 
 ### Field Mapping Considerations
 
@@ -140,18 +134,21 @@ When adding new automations in the future:
 
 ### CRM Lead DocType
 
-- **API Endpoint**: `/api/resource/CRM Lead/{recordId}`
-- **Method**: PUT (for updates)
-- **Authentication**: Token-based API authentication
+- **API Endpoint**: `/api/resource/CRM Lead/{recordId}` (configurable per site via `API_BASE_URL`)
+- **Methods**: 
+  - PUT (for updates) - attempts to update existing lead
+  - POST (for creates) - creates new lead if update returns 404
+- **Authentication**: Token-based API authentication (configured per site)
 - **Validation**: Server-side validation for mandatory fields
 
 ## Future Considerations
 
-- We may be adding new automations in the future for additional clients
-- Each new client will follow the same automation pattern
-- Custom fields may be added per client as needed
+- New client sites will use the same shared `sync-lead.js` script
+- Each client configures their own API tokens and endpoint in Airtable
+- Custom fields may be added to the script as needed for specific clients
 - Maintain the single-directional data flow (Airtable → CRM)
+- The manual trigger approach gives users control over when to sync records
 
 ---
 
-**Key Principle**: The CRM is primarily a **read-only lookup tool** for data maintained in Airtable. All write operations should originate from Airtable automations, not from user interactions in the CRM.
+**Key Principle**: The CRM is primarily a **read-only lookup tool** for data maintained in Airtable. All write operations should originate from Airtable via the manual sync button, not from user interactions in the CRM.
