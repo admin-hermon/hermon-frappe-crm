@@ -141,89 +141,13 @@ const signature = createResource({
 
 function setSignature(editor) {
   if (!signature.data) return
+  signature.data = signature.data.replace(/\n/g, '<br>')
   let emailContent = editor.getHTML()
   emailContent = emailContent.startsWith('<p></p>')
     ? emailContent.slice(7)
     : emailContent
-  // Signature data is set first, most likely to handle replies (setContent overrides the content entirely)
-  editor.commands.setContent(parseSignature(signature.data))
-  // Previous email content is inserted after the signature
-  // setContent + insertContent ensures idempotency
-  editor.commands.insertContent(emailContent)
+  editor.commands.setContent(signature.data + emailContent)
   editor.commands.focus('start')
-}
-
-/**
- * Parses the signature data and returns either the original html based signature or a JSON representation of the signature
- * 
- * If the signature contains images, it will return a JSON representation of the signature.
- * 
- * We cannot mix HTML and JSON conteint in the payload pushed to setContent or insertContent - we need to return one or the other.
- * 
- * @param signatureData - The signature data to parse
- * @returns The parsed signature data
- */
-function parseSignature(signatureData) {
-  // Check if signature contains images
-  const tempDiv = document.createElement('div')
-  tempDiv.innerHTML = signatureData
-  const images = tempDiv.querySelectorAll('img')
-  const containsImages = images.length > 0
-
-  // Original text logic, returns html based signature
-  if (!containsImages) {
-    return createTextSignature(signatureData)
-  }
-
-  // Signature contains images, return the a JSON representation of the signature as the HTML based payload has issues with images
-  return createImageBasedSignature(images[0])
-}
-
-// Original text logic, previously implemented in setSignature
-function createTextSignature(signatureData) {
-  signatureData = signatureData.replace(/\n/g, '<br>')
-  return signatureData
-}
-
-/**
- * TipTap's handling of <img> tags in HTML signatures is unreliable.
- * To ensure signatures with images are supported, we convert the signature
- * content into a JSON format representing structured TipTap nodes,
- * supporting a single image as a proper node. This provides stability for
- * emails with image signatures in the editor.
- *
- * 
- * The caveat of this is that if the signature contains multiple images, or other text,
- * it will only render the first image.
- */
-
-function createImageBasedSignature(imageElementObject) {
-  const imageUrl = imageElementObject.src
-  const imageAlt = imageElementObject.alt || ''
-
-  return [
-    {
-      type: 'paragraph',
-      content: [
-        {
-          type: 'hardBreak'
-        }
-      ]
-    },
-    {
-      type: 'paragraph',
-      content: [
-        {
-          type: 'image',
-          attrs: {
-            src: imageUrl,
-            alt: imageAlt,
-            title: imageAlt
-          }
-        }
-      ]
-    }
-  ]
 }
 
 watch(
