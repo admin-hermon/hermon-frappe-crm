@@ -14,7 +14,7 @@
     }"
     :placeholder="placeholder"
     :editable="editable"
-    :extensions="[CustomParagraph]"
+    :extensions="[CustomParagraph, InlineImage]"
   >
     <template #top>
       <div class="flex flex-col gap-3">
@@ -185,6 +185,7 @@ import { TextEditorBubbleMenu, TextEditor, FileUploader, call } from 'frappe-ui'
 import { capture } from '@/telemetry'
 import { validateEmail } from '@/utils'
 import Paragraph from '@tiptap/extension-paragraph'
+import Image from '@tiptap/extension-image'
 import { EditorContent } from '@tiptap/vue-3'
 import { ref, computed, nextTick } from 'vue'
 
@@ -235,6 +236,17 @@ const CustomParagraph = Paragraph.extend({
       },
     }
   },
+})
+
+// Configure Image extension to be inline so images can be inside paragraphs
+// This allows HTML signatures with <img> tags to work properly when using setContent()
+// Using .configure() to set the inline option (not .extend() which doesn't apply config properly)
+// Note: This will show a duplicate extension warning because frappe-ui's TextEditor
+// already includes an Image extension by default. However, our configured extension
+// will replace the default one, so the warning is safe to ignore.
+// The only risk is that if frappe-ui's TextEditor is updated to use a different Image extension or a custom one
+const InlineImage = Image.configure({
+  inline: true,
 })
 
 const modelValue = defineModel()
