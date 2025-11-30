@@ -40,6 +40,7 @@
 import Icon from '@/components/Icon.vue'
 import { createResource, createDocumentResource, call, FormControl, Spinner, Button, ErrorMessage, Tooltip, Badge } from 'frappe-ui'
 import { createToast } from '@/utils'
+import { sessionStore } from '@/stores/session'
 
 const availableNumbers = createResource({
   url: 'frappe.client.get_list',
@@ -80,16 +81,18 @@ const showErrorToast = (err) => {
   })
 }
 
+const { user } = sessionStore()
+
 const telephonyAgent = createDocumentResource({
   doctype: 'CRM Telephony Agent',
-  name: frappe.session.user,
+  name: user.value,
   fields: ['twilio_number', 'override_geo_routing'],
   auto: true,
   onError: (err) => {
     // Document doesn't exist yet - initialize with default values
     if (!telephonyAgent.doc) {
       telephonyAgent.setDoc({
-        user: frappe.session.user,
+        user: user.value,
         twilio: 1,
         default_medium: 'Twilio',
         call_receiving_device: 'Computer',
@@ -111,7 +114,7 @@ async function savePreferences() {
       await call('frappe.client.insert', {
         doc: {
           doctype: 'CRM Telephony Agent',
-          user: frappe.session.user,
+          user: user.value,
           twilio: 1,
           default_medium: 'Twilio',
           call_receiving_device: 'Computer',
