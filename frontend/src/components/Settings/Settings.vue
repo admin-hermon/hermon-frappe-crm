@@ -61,7 +61,7 @@ import WhatsAppSettings from '@/components/Settings/WhatsAppSettings.vue'
 import ERPNextSettings from '@/components/Settings/ERPNextSettings.vue'
 import TelephonySettings from '@/components/Settings/TelephonySettings.vue'
 import EmailConfig from '@/components/Settings/EmailConfig.vue'
-import CallingSmsSettings from '@/components/Settings/CallingSmsSettings.vue'
+import CallingAndSmsSettings from '@/components/Settings/CallingAndSmsSettings.vue'
 import SidebarLink from '@/components/SidebarLink.vue'
 import { usersStore } from '@/stores/users'
 import {
@@ -113,7 +113,7 @@ const tabs = computed(() => {
         {
           label: __('Calling and SMS Settings'),
           icon: PhoneIcon,
-          component: markRaw(CallingSmsSettings),
+          component: markRaw(CallingAndSmsSettings),
         },
       ],
     },

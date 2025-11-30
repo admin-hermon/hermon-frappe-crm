@@ -7,7 +7,7 @@
 
     <div v-if="telephonyAgent.doc && !telephonyAgent.get.loading && !availableNumbers.loading"
       class="flex-1 flex flex-col gap-8 overflow-y-auto">
-      <FormControl type="select" v-model="telephonyAgent.doc.twilio_number" :label="__('Preferred Calling Number')"
+      <FormControl type="select" v-model="telephonyAgent.doc.twilio_number" :label="__('Preferred Calling and SMS Number')"
         :options="availableNumbers"
         :description="__('Select your preferred number from the pool of available Twilio numbers')" class="w-1/2" />
 
@@ -37,7 +37,8 @@
 </template>
 
 <script setup>
-import { createResource, createDocumentResource, call, FormControl, Spinner, Button, ErrorMessage, Tooltip, Icon, Badge } from 'frappe-ui'
+import Icon from '@/components/Icon.vue'
+import { createResource, createDocumentResource, call, FormControl, Spinner, Button, ErrorMessage, Tooltip, Badge } from 'frappe-ui'
 import { createToast } from '@/utils'
 
 const availableNumbers = createResource({
@@ -64,7 +65,7 @@ const availableNumbers = createResource({
 const showSuccessToast = () => {
   createToast({
     title: __('Success'),
-    text: __('Calling preferences saved successfully'),
+    text: __('Calling and sms preferences saved successfully'),
     icon: 'check',
     iconClasses: 'text-ink-green-3',
   })
@@ -73,7 +74,7 @@ const showSuccessToast = () => {
 const showErrorToast = (err) => {
   createToast({
     title: __('Error'),
-    text: err.message || err.messages?.[0] || __('Failed to save calling preferences'),
+    text: err.message || err.messages?.[0] || __('Failed to save calling and sms preferences'),
     icon: 'x',
     iconClasses: 'text-ink-red-4',
   })
