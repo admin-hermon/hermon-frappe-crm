@@ -62,6 +62,11 @@
           </template>
         </Badge>
         <Badge
+          v-if="activity.from"
+          :label="`${__('Number used')}: ${activity.from}`"
+          theme="gray"
+        />
+        <Badge
           v-if="activity.status == 'Completed'"
           :label="activity._duration"
         >
