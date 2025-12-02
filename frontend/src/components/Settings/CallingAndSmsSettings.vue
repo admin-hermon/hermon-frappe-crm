@@ -19,6 +19,35 @@
             <Icon name="info" class="h-4 w-4 text-ink-gray-5" />
           </Tooltip>
         </div>
+
+        <!-- How Number Selection Works -->
+        <div class="mt-2 rounded border border-outline-gray-2 bg-surface-gray p-4">
+          <div class="flex items-start gap-2 mb-2">
+            <Icon name="info" class="h-4 w-4 text-ink-gray-6 mt-0.5 flex-shrink-0" />
+            <h3 class="text-sm font-medium text-ink-gray-9">
+              {{ __('How Number Selection Works') }}
+            </h3>
+          </div>
+          <div class="ml-6 text-sm text-ink-gray-7 space-y-1.5">
+            <p v-if="overrideGeoRouting">
+              <strong>{{ __('Override enabled:') }}</strong>
+              {{ __('Your preferred number above will always be used for all calls and SMS messages, regardless of the destination location.') }}
+            </p>
+            <template v-else>
+              <p>
+                <strong>{{ __('Default behavior:') }}</strong>
+                {{ __('The system selects your number in this order:') }}
+              </p>
+              <ol class="list-decimal list-inside ml-2 space-y-1">
+                <li>{{ __('First, tries to match a number from the pool based on the destination location (geo-based routing)') }}</li>
+                <li>{{ __('If no match is found, uses your preferred number above as a fallback') }}</li>
+              </ol>
+              <p class="mt-2 text-ink-gray-6">
+                {{ __('Enable "Override geo-based routing" to always use your preferred number and skip location matching.') }}
+              </p>
+            </template>
+          </div>
+        </div>
       </div>
       <div v-else class="w-1/2 rounded border border-outline-gray-2 bg-surface-gray p-4">
         <p class="text-sm text-ink-gray-6">
