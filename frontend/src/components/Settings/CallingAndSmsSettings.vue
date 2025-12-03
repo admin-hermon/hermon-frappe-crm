@@ -20,12 +20,11 @@
           </Tooltip>
         </div>
 
-        <!-- How Number Selection Works -->
         <div class="mt-2 rounded border border-outline-gray-2 bg-surface-gray p-4">
           <div class="flex items-start gap-2 mb-2">
             <Icon name="info" class="h-4 w-4 text-ink-gray-6 mt-0.5 flex-shrink-0" />
             <h3 class="text-sm font-medium text-ink-gray-9">
-              {{ __('How Number Selection Works') }}
+              ℹ️ {{ __('Info') }}
             </h3>
           </div>
           <div class="ml-6 text-sm text-ink-gray-7 space-y-1.5">
@@ -46,6 +45,9 @@
                 {{ __('Enable "Override geo-based routing" to always use your preferred number and skip location matching.') }}
               </p>
             </template>
+            <p class="mt-3 pt-3 border-t border-outline-gray-2 text-ink-gray-6 italic">
+              {{ __('Note: These settings only apply to calling and SMS messages. WhatsApp messaging uses separate number configuration and is not affected by these preferences.') }}
+            </p>
           </div>
         </div>
       </div>
@@ -111,9 +113,6 @@ const telephonyAgent = createDocumentResource({
   name: user,
   fields: ['twilio_number', 'override_geo_routing', 'user', 'twilio', 'default_medium', 'call_receiving_device'],
   auto: true,
-  onSuccess: () => {
-    syncFormValuesFromDoc()
-  },
   onError: (err) => {
     // Check if document doesn't exist (404 error)
     if (err?.httpStatus === 404 || err?.exc_type === 'DoesNotExistError') {
@@ -128,12 +127,12 @@ function syncFormValuesFromDoc() {
     isNewDocument.value = false
     selectedNumber.value = doc.twilio_number || ''
     overrideGeoRouting.value = doc.override_geo_routing || false
+  } else {
+    isNewDocument.value = true
   }
 }
 
 // Watch for document changes to sync form values
-// This watcher will trigger both on telephonyAgent.doc changes and immediately on component mount (due to { immediate: true }).
-// The initial run upon mount ensures the form is synced with document values when the component loads.
 watch(
   () => telephonyAgent?.doc,
   () => {
