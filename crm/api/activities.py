@@ -312,6 +312,7 @@ def get_lead_activities(name):
 				"activity_type": "sms",
 				"creation": message.creation,
 				"owner": message.owner,
+				"from_number": message.from_number,
 				"content": f"SMS {direction} {lead_title}: {message.message}",
 				"is_lead": True,
 			}
@@ -539,6 +540,6 @@ def get_linked_sms_messages(name):
 	messages = frappe.get_all(
 		"SMS Message",
 		filters={"lead": name},
-		fields=["name", "message", "direction", "creation", "owner"],
+		fields=["name", "message", "direction", "creation", "owner", "from_number"],
 	)
 	return messages or []

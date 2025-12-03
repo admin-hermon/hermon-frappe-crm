@@ -47,9 +47,11 @@ def analyze_phone_number(phone_number: str) -> dict:
 def get_from_number(caller: str, to_number: str) -> str:
     """
     Determine the optimal FROM number for a call or an SMS based on the caller agent and the destination number
-
-    First tries to use a number from the pool of Twillion Number doctypes (if any) based on location and 
-    falls back to using the user's telephony agent setting
+    
+    Priority:
+    1. If user has override_geo_routing enabled, use twilio_number directly
+    2. Try location-based routing from pool
+    3. Fall back to CRM Telephony Agent twilio_number
 
     Args:
         caller: Caller identity (e.g., "client:user@example.com")
@@ -61,15 +63,18 @@ def get_from_number(caller: str, to_number: str) -> str:
     Raises:
         Exception: If no suitable number found
     """
+    telephony_agent = _get_telephony_agent(caller)
+
+    if telephony_agent and telephony_agent.override_geo_routing and telephony_agent.twilio_number:
+        return telephony_agent.twilio_number
+
     location_based_number = _get_number_based_on_location(to_number)
 
     if location_based_number:
         return location_based_number
 
-    fallback_number = _get_telephony_agent_number(caller)
-
-    if fallback_number:
-        return fallback_number
+    if telephony_agent and telephony_agent.twilio_number:
+        return telephony_agent.twilio_number
 
     raise Exception(
         f"No suitable from number found for caller {caller} when communicating with {to_number}"
@@ -127,11 +132,16 @@ def _get_number_based_on_location(to_number: str) -> str | None:
         return None
 
 
-def _get_telephony_agent_number(caller: str) -> str | None:
-    """Get telephony agent number for user (legacy fallback)"""
+def _get_telephony_agent(caller: str) -> dict | None:
+    """Get telephony agent settings for user"""
     try:
         identity = caller.replace("client:", "").strip()
         user = Twilio.emailid_from_identity(identity)
-        return frappe.db.get_value("CRM Telephony Agent", user, "twilio_number")
+        return frappe.get_value(
+            "CRM Telephony Agent",
+            {"user": user},
+            ["override_geo_routing", "twilio_number"],
+            as_dict=True
+        )
     except Exception:
         return None

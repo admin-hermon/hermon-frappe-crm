@@ -9,6 +9,9 @@
           <Tooltip :text="formatDate(activity.creation)">
             <div class="text-sm text-gray-600 dark:text-gray-400">
               {{ __(timeAgo(activity.creation)) }}
+              <span v-if="activity.from_number" class="text-gray-500">
+                ({{ __('Number used') }}: {{ activity.from_number }})
+              </span>
             </div>
           </Tooltip>
         </div>
