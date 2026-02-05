@@ -94,7 +94,11 @@ def parse_mobile_no(mobile_no: str):
 def is_whatsapp_enabled():
 	if not frappe.db.exists("DocType", "WhatsApp Settings"):
 		return False
-	return frappe.get_cached_value("WhatsApp Settings", "WhatsApp Settings", "enabled")
+	default_outgoing = frappe.get_cached_value("WhatsApp Settings", "WhatsApp Settings", "default_outgoing_account")
+	if not default_outgoing:
+		return False
+	status = frappe.get_cached_value("WhatsApp Account", default_outgoing, "status")
+	return status == "Active"
 
 
 @frappe.whitelist()
