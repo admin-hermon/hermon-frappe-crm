@@ -25,7 +25,7 @@
           @click="emit('send', template.name)"
         >
           <div class="border-b pb-2 text-base font-semibold">
-            {{ template.name }}
+            {{ template.template_name }}
           </div>
           <TextEditor
             v-if="template.template"
@@ -71,7 +71,7 @@ const templates = createListResource({
   type: 'list',
   doctype: 'WhatsApp Templates',
   cache: ['whatsappTemplates'],
-  fields: ['name', 'template', 'footer'],
+  fields: ['name', 'template_name', 'template', 'footer'],
   filters: { status: 'APPROVED', for_doctype: ['in', [props.doctype, '']] },
   orderBy: 'modified desc',
   pageLength: 99999,
@@ -86,7 +86,7 @@ onMounted(() => {
 const filteredTemplates = computed(() => {
   return (
     templates.data?.filter((template) => {
-      return template.name.toLowerCase().includes(search.value.toLowerCase())
+      return template.template_name.toLowerCase().includes(search.value.toLowerCase())
     }) ?? []
   )
 })
